@@ -3,23 +3,32 @@ Bayesian Gaussian Process latent variable models for
 pseudotime inference in single-cell RNA-seq data
 
 
-kieran.campbell@sjc.ox.ac.uk=#
+kieran.campbell@sjc.ox.ac.uk
+
+I have tried to stick to the convention of
+N data points and 
+P dimensions where
+i = 1,...,N references the sample (cell/point) and
+j = 1,...,P references the dimension
+
+=#
 
 using Distributions
 using Gadfly
 using DataFrames
 using StatsBase
 
-## log-pdf for non-standardized student-t distribution
-function nStudent(x::Real, mu::Real, sigma::Real, df::Real)
-    larg = 1 + 1 / df * ( (x - mu)/sigma )^2
+## bizarrely not needed ----
+# ## log-pdf for non-standardized student-t distribution
+# function nStudent(x::Real, mu::Real, sigma::Real, df::Real)
+#     larg = 1 + 1 / df * ( (x - mu)/sigma )^2
 
-    ll = lgamma( (df+1)/2 ) - lgamma(df / 2)
-    ll -= 0.5 * log(pi * df) - log(sigma)
-    ll -= (df + 1) / 2 * log(larg)
+#     ll = lgamma( (df+1)/2 ) - lgamma(df / 2)
+#     ll -= 0.5 * log(pi * df) - log(sigma)
+#     ll -= (df + 1) / 2 * log(larg)
 
-    larg
-end
+#     larg
+# end
 
 function pairwise_distance(t)
     n = length(t)
@@ -73,36 +82,68 @@ end
 ## Likleihood functions
 
 # Student's log likelihood for data given GP
-function student_likelihood(X, mu, sigma, df)
-    N, P = size(X)
-    @assert length(sigma) == P
-    @assert size(X) == size(mu)
+# function student_likelihood(X, mu, sigma, df)
+#     N, P = size(X)
+#     @assert length(sigma) == P
+#     @assert size(X) == size(mu)
 
+#     ll = 0
+#     for i in 1:N
+#         for j in 1:P
+#             ll += nStudent(X[i,j], mu[i,j], sigma[j], df)
+#         end
+#     end
+#     return ll
+# end
+
+# Probability of GP function given kernel parameters
+# function GP_density(mu, t, lambda)
+#     N, P = size(mu)
+
+#     @assert length(lambda) == P
+#     @assert length(t) == N
+
+#     ll = 0
+
+#     for j in 1:P
+#         ll += sum(logpdf(MultivariateNormal(zeros(length(t)),K(t, lambda[j])), mu[:,j]))
+#     end
+
+#     return ll
+# end
+
+function GP_marginal_log_likelihood(X, t, lambda, tau)
+    #== This is the marginal likelihood used with the student's
+    scale-mixture representation or the heteroscedastic noise 
+    model, so tau must represent a matrix of size X with a precision 
+    for each individual point ==#
+    @assert length(lambda) == size(X)[2]
+    @assert size(X) == size(tau)
+
+    N, P = size(X)
     ll = 0
-    for i in 1:N
-        for j in 1:P
-            ll += nStudent(X[i,j], mu[i,j], sigma[j], df)
+    for j in 1:P
+        tau_j = vec(tau[:,j])
+        Sigma_j =  covariance_matrix_hnoise(t, lambda[j], 1 ./ tau_j)
+        ll += sum(logpdf(MultivariateNormal(zeros(length(t)), Sigma_j), X[:,j]))
+    end
+    return ll
+end
+
+function precision_prior(tau, sigma, df)
+    #== Gamma prior on precision for scale-mixture
+    representation of student's t distribution ==#
+    N, P = size(tau)
+    @assert length(sigma) == P
+    
+    ll = 0 # log probability
+    for j in 1:P
+        for i in 1:N
+            ll += logpdf(Gamma(df / 2, df * sigma[j] / 2), tau[i,j])
         end
     end
     return ll
 end
-
-# Probability of GP function given kernel parameters
-function GP_density(mu, t, lambda)
-    N, P = size(mu)
-
-    @assert length(lambda) == P
-    @assert length(t) == N
-
-    ll = 0
-
-    for j in 1:P
-        ll += sum(logpdf(MultivariateNormal(zeros(length(t)),K(t, lambda[j])), mu[:,j]))
-    end
-
-    return ll
-end
-
 
 ## electroGP
 function corp_prior(t, r = 1)
@@ -139,7 +180,7 @@ function sigma_prior(sigma, alpha = 1.0, beta = 1.0)
 end
 
 
-function acceptance_ratio(X, tp, t, mu_p, mu, lambda_prop, lambda, 
+function acceptance_ratio(X, tp, t, tau_prop, tau, lambda_prop, lambda, 
     sigma_prop, sigma, r, s, gamma, df)
     """ 
     Compute the acceptance ratio for 
@@ -152,12 +193,13 @@ function acceptance_ratio(X, tp, t, mu_p, mu, lambda_prop, lambda,
     @param s Tempering parameter: (log likelihood * prior) is raised to this value
     @param gamma Rate for exponential prior on lambda
     """
-    s_likelihood = student_likelihood(X, mu_p, sigma_prop, df) - student_likelihood(X, mu, sigma, df)
-    gp_likelihood = GP_density(mu_p, tp, lambda_prop) - GP_density(mu, t, lambda)
+    likelihood = GP_marginal_log_likelihood(X, tp, lambda_prop, tau_prop) -
+    GP_marginal_log_likelihood(X, t, lambda, tau)
+    tau_prior = precision_prior(tau_prop, sigma_prop, df) - precision_prior(tau, sigma, df)
     t_prior = corp_prior(tp, r) - corp_prior(t, r)
     l_prior = lambda_prior(lambda_prop, gamma) - lambda_prior(lambda, gamma)
     s_prior = sigma_prior(sigma_prop, delta) - sigma_prior(sigma, delta)
-    return s_likelihood + gp_likelihood + t_prior + l_prior + s_prior
+    return likelihood + tau_prior + t_prior + l_prior + s_prior
 end
 
 function couple_update_acceptance_ratio(X, t1, t2, theta1, theta2, r, s1, s2)
@@ -191,7 +233,7 @@ end;
 
 
 function pseudogp_student(X, n_iter, burn, thin, 
-    mu, muvar, t, tvar, lambda, lvar, sigma, svar, 
+    tau, tauvar, t, tvar, lambda, lvar, sigma, svar, 
     r = 1, return_burn = false, cell_swap_probability = 0,
     gamma = 1.0, df = 1.0)
     
@@ -200,6 +242,7 @@ function pseudogp_student(X, n_iter, burn, thin,
     
     N, P = size(X)
 
+    ## Who needs sanity checking when you're having fun with GPs...
     @assert P == 2 # for now
     @assert cell_swap_probability >= 0
     @assert cell_swap_probability <= 1
@@ -207,51 +250,47 @@ function pseudogp_student(X, n_iter, burn, thin,
     @assert burn < n_iter
     @assert length(t) == N
     @assert length(lvar) == length(svar) == P
-    @assert size(X) == size(mu)
-    @assert length(muvar) == P
+    @assert size(X) == size(tau)
+    @assert length(tauvar) == P
 
     ## chains
     tchain = zeros((chain_size, N))
     tchain[1,:] = t
-
-    muchain = zeros((chain_size, N, P))
-    muchain[1,:,:] = mu
 
     lambda_chain = zeros(chain_size, P)
     lambda_chain[1,:] = lambda
 
     sigma_chain = zeros(chain_size, P)
     sigma_chain[1,:] = sigma
+
+    tau_chain = zeros(chain_size, N, P)
+    tau_chain[1,:,:] = tau
     
     accepted = zeros(n_iter)
 
-    student_chain = zeros(chain_size)
-    GP_chain = zeros(chain_size)
+    likelihood_chain = zeros(chain_size)
     prior_chain = zeros(chain_size)
     lambda_prior_chain = zeros(chain_size)
     
-    student_chain[1] = student_likelihood(X, mu, sigma, df)
-    GP_chain[1] = GP_density(mu, t, lambda)
+    likelihood_chain[1] = GP_marginal_log_likelihood(X, t, lambda, tau)
 
     prior_chain[1] = corp_prior(t, r)
     lambda_prior_chain[1] = lambda_prior(lambda, gamma)
-    #println(gamma)
 
-    # alpha_chain = zeros(chain_size - 1)
-    # rnd_chain = zeros(chain_size - 1)
-    
     ## MH
     for i in 1:n_iter
-        # proposals
+
+        # Proposals -----------
         t_prop = propose_t(t, tvar)
-        mu_prop = fill(NaN, size(mu))
+        tau_prop = fill(NaN, size(tau))
         for j in 1:P
-            mu_prop[:,j] = propose(mu[:,j], muvar[j], -Inf, Inf)
+            tau_prop[:,j] = propose(tau[:,j], tauvar[j], 0, Inf)
         end
 
         lambda_prop = propose(lambda, lvar)
         sigma_prop = propose(sigma, svar)
 
+        # Cell swapping ----------
         if cell_swap_probability > 0
             if rand() < cell_swap_probability
                 # swap two cells at random
@@ -260,21 +299,20 @@ function pseudogp_student(X, n_iter, burn, thin,
             end
         end
 
-        # calculate acceptance ratio
+        # Acceptance ratio & accept - reject -------------
         alpha = acceptance_ratio(X, t_prop, t, 
-                                mu_prop, mu,
+                                tau_prop, tau,
                                 lambda_prop, lambda, 
                                 sigma_prop, sigma, 
                                 r, 1, gamma, df)
 
         rnd = log(rand())
 
-        # accept - reject
         if alpha > rnd
             # accept
             accepted[i] = 1
             t = t_prop
-            mu = mu_prop
+            tau = tau_prop
             lambda = lambda_prop
             sigma = sigma_prop
         end
@@ -284,11 +322,10 @@ function pseudogp_student(X, n_iter, burn, thin,
             # update traces
             j = int(i / thin) + 1
             tchain[j,:] = t
-            muchain[j,:,:] = mu
+            tau_chain[j,:,:] = tau
             lambda_chain[j,:] = lambda
             sigma_chain[j,:] = sigma
-            student_chain[j] = student_likelihood(X, mu, sigma, df)
-            GP_chain[j] = GP_density(mu, t, lambda)
+            likelihood_chain[j] = GP_marginal_log_likelihood(X, t, lambda, tau)
             prior_chain[j] = corp_prior(t, r)
             lambda_prior_chain[j] = lambda_prior(lambda, gamma)
         end
@@ -305,9 +342,8 @@ function pseudogp_student(X, n_iter, burn, thin,
         "acceptance_rate" => (sum(accepted) / length(accepted)),
         "burn_acceptance_rate" => (sum(accepted[burnt:end]) / length(accepted[burnt:end])),
         "r" => r,
-        "muchain" => muchain,
-        "student_chain" => student_chain,
-        "GP_chain" => GP_chain,
+        "tau_chain" => tau_chain,
+        "likelihood_chain" => likelihood_chain,
         "prior_chain" => prior_chain,
         "lambda_prior_chain" => lambda_prior_chain,
         "params" => {"n_iter" => n_iter,
