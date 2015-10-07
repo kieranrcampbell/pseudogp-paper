@@ -233,10 +233,27 @@ end;
 
 
 function pseudogp_student(X, n_iter, burn, thin, 
-    tau, tauvar, t, tvar, lambda, lvar, sigma, svar, 
-    r = 1, return_burn = false, cell_swap_probability = 0,
+    tau, tauvar, t, tvar, lambda, lvar, sigma, svar; 
+    r = 1, return_burn = true, cell_swap_probability = 0,
     gamma = 1.0, df = 1.0)
-    
+    #=
+    GP-LVM with students-t likelihood. For N cells represented in 
+    P dimensional space, input parameters are:
+    X - N by P input data
+    n_iter - number of iterations for MCMC
+    burn, thin - the usual
+    tau - N by P matrix of starting values for the precision for each point
+    tauvar - Vector of length P with a proposal variance in each dimension for tau
+    lambda - Vector length P of kernel parameters (see def in paper)
+    lvar - Vector length P proposal variance for each lambda
+    sigma - Vector length P of initial values for student's variance
+    svar - Proposal variance for the above
+    r - Corp prior repulsion parameter
+    return_burn - Logical, should the burn in period be returned?
+    gamma - hyperprior on lambda
+    df - Degrees of freedom for student's distribution 
+
+    =#    
     chain_size = int(floor(n_iter / thin)) + 1 # size of the thinned chain
     burn_thin = int(floor(burn / thin)) # size of the burn region of the thinned chain
     
@@ -433,7 +450,7 @@ function plot_posterior_mean(mh, tp, X)
     Theme(default_color=color("red"))))
 end
 
-function plot_likelihood(mh; term = "student_chain")
+function plot_likelihood(mh; term = "likelihood_chain")
     df = DataFrame()
     df[:value] = mh[term]
     df[:iter] = 1:(size(df)[1]) # (burn + 2)
