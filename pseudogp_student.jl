@@ -175,6 +175,7 @@ end
 # end
 
 function sigma_prior(sigma, alpha = 1.0, beta = 1.0)
+    @assert alpha == beta == 1.0
     sp = sum(logpdf(InverseGamma(alpha, beta), sigma))
     return sp
 end
@@ -198,7 +199,7 @@ function acceptance_ratio(X, tp, t, tau_prop, tau, lambda_prop, lambda,
     tau_prior = precision_prior(tau_prop, sigma_prop, df) - precision_prior(tau, sigma, df)
     t_prior = corp_prior(tp, r) - corp_prior(t, r)
     l_prior = lambda_prior(lambda_prop, gamma) - lambda_prior(lambda, gamma)
-    s_prior = sigma_prior(sigma_prop, delta) - sigma_prior(sigma, delta)
+    s_prior = sigma_prior(sigma_prop) - sigma_prior(sigma)
     return likelihood + tau_prior + t_prior + l_prior + s_prior
 end
 

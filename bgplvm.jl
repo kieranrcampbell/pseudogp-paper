@@ -77,17 +77,17 @@ function lambda_prior(lambda, rate = 1.0)
     return lp
 end
 
-# function sigma_prior(sigma, rate = 1.0)
-#     # sp = sum(logpdf(InverseGamma(alpha, beta), sigma))
-#     sp = sum(logpdf(Exponential(rate), sigma))
-#     # sp = 0
-#     return sp
-# end
-
-function sigma_prior(sigma, alpha = 1.0, beta = 1.0)
-    sp = sum(logpdf(InverseGamma(alpha, beta), sigma))
+function sigma_prior_exponential(sigma, rate = 100.0)
+    @assert rate == 100.0
+    sp = sum(logpdf(Exponential(rate), sigma))
     return sp
 end
+
+# function sigma_prior(sigma; alpha = 1.0, beta = 1.0)
+#     @assert alpha == beta == 1.0 # julia is confusing
+#     sp = sum(logpdf(InverseGamma(alpha, beta), sigma))
+#     return sp
+# end
 
 
 function acceptance_ratio(X, tp, t, lambda_prop, lambda, sigma_prop, sigma, r, s, gamma)
@@ -105,7 +105,7 @@ function acceptance_ratio(X, tp, t, lambda_prop, lambda, sigma_prop, sigma, r, s
     likelihood = log_likelihood(X, tp, lambda_prop, sigma_prop) - log_likelihood(X, t, lambda, sigma)
     t_prior = corp_prior(tp, r) - corp_prior(t, r)
     l_prior = lambda_prior(lambda_prop, gamma) - lambda_prior(lambda, gamma)
-    s_prior = sigma_prior(sigma_prop, delta) - sigma_prior(sigma, delta)
+    s_prior = sigma_prior_exponential(sigma_prop) - sigma_prior_exponential(sigma)
     return s * (likelihood + t_prior + l_prior + s_prior) 
 end
 
@@ -155,8 +155,8 @@ end;
 
 
 function B_GPLVM_MH(X, n_iter, burn, thin, 
-    t, tvar, lambda, lvar, sigma, svar, 
-    r = 1, return_burn = false, cell_swap_probability = 0,
+    t, tvar, lambda, lvar, sigma, svar;
+    r = 1, return_burn = true, cell_swap_probability = 0,
     gamma = 1.0)
     
     chain_size = int(floor(n_iter / thin)) + 1 # size of the thinned chain
@@ -171,6 +171,8 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
     @assert burn < n_iter
     @assert length(t) == n
     @assert length(lvar) == length(svar) == ndim
+
+    n_iter = int(n_iter)
 
     ## chains
     tchain = zeros((chain_size, n))
