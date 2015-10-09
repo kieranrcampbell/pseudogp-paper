@@ -139,7 +139,7 @@ function precision_prior(tau, sigma, df)
     ll = 0 # log probability
     for j in 1:P
         for i in 1:N
-            ll += logpdf(Gamma(df / 2, df * sigma[j] / 2), tau[i,j])
+            ll += logpdf(Gamma(df / 2, df / sigma[j] / 2), tau[i,j])
         end
     end
     return ll
@@ -167,15 +167,14 @@ function lambda_prior(lambda, rate = 1.0)
     return lp
 end
 
-# function sigma_prior(sigma, rate = 1.0)
-#     # sp = sum(logpdf(InverseGamma(alpha, beta), sigma))
-#     sp = sum(logpdf(Exponential(rate), sigma))
-#     # sp = 0
-#     return sp
-# end
+function sigma_prior_exponential(sigma, rate = 100.0)
+    @assert rate == 100.0
+    sp = sum(logpdf(Exponential(rate), sigma))
+    return sp
+end
 
-function sigma_prior(sigma, alpha = 1.0, beta = 1.0)
-    @assert alpha == beta == 1.0
+function sigma_prior(sigma; alpha = 1.0, beta = 1.0)
+    @assert alpha == beta == 1.0 # julia is confusing
     sp = sum(logpdf(InverseGamma(alpha, beta), sigma))
     return sp
 end

@@ -83,11 +83,11 @@ function sigma_prior_exponential(sigma, rate = 100.0)
     return sp
 end
 
-# function sigma_prior(sigma; alpha = 1.0, beta = 1.0)
-#     @assert alpha == beta == 1.0 # julia is confusing
-#     sp = sum(logpdf(InverseGamma(alpha, beta), sigma))
-#     return sp
-# end
+function sigma_prior(sigma; alpha = 1.0, beta = 1.0)
+    @assert alpha == beta == 1.0 # julia is confusing
+    sp = sum(logpdf(InverseGamma(alpha, beta), sigma))
+    return sp
+end
 
 
 function acceptance_ratio(X, tp, t, lambda_prop, lambda, sigma_prop, sigma, r, s, gamma)
@@ -105,7 +105,7 @@ function acceptance_ratio(X, tp, t, lambda_prop, lambda, sigma_prop, sigma, r, s
     likelihood = log_likelihood(X, tp, lambda_prop, sigma_prop) - log_likelihood(X, t, lambda, sigma)
     t_prior = corp_prior(tp, r) - corp_prior(t, r)
     l_prior = lambda_prior(lambda_prop, gamma) - lambda_prior(lambda, gamma)
-    s_prior = sigma_prior_exponential(sigma_prop) - sigma_prior_exponential(sigma)
+    s_prior = sigma_prior(sigma_prop) - sigma_prior_exponential(sigma)
     return s * (likelihood + t_prior + l_prior + s_prior) 
 end
 
