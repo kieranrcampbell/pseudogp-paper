@@ -139,7 +139,7 @@ function precision_prior(tau, sigma, df)
     ll = 0 # log probability
     for j in 1:P
         for i in 1:N
-            ll += logpdf(Gamma(df / 2, df / sigma[j] / 2), tau[i,j])
+            ll += logpdf(Gamma(df / 2, df * sigma[j] / 2), tau[i,j])
         end
     end
     return ll
@@ -163,7 +163,6 @@ end
 
 function lambda_prior(lambda, rate = 1.0)
     lp = sum(logpdf(Exponential(rate), lambda))
-    # lp = 0
     return lp
 end
 

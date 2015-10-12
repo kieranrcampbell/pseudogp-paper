@@ -1,0 +1,62 @@
+
+## Loads sce and pseudotimes and filters on genes etc
+
+
+load_data <- function(rdir = "/net/isi-scratch/kieran/") {
+  cluster <- to_keep <- pseudotimes <- NULL
+  
+  # Load pseudotime assignments ------
+  if(require(rhdf5)) { # woo hdf5 is actually installed
+    h5file <- paste0(rdir, "GP/gpseudotime/data/pseudotime_traces_6e6iterations_5e5gamma_5_10_2015.h5")
+    h5ls(h5file)
+    
+    to_keep <- h5read(h5file, "to_keep")
+    pseudotimes <- h5read(h5file, "tchain")
+    cluster <- h5read(h5file, "embeddr_cluster")
+  } else {
+    pseudotime_file <- paste0(rdir, "GP/gpseudotime/data/decsv/pseudotimes.csv")
+    to_keep_file <- paste0(rdir, "GP/gpseudotime/data/decsv/to_keep.csv")
+    cluster_file <- paste0(rdir, "GP/gpseudotime/data/decsv/cluster.csv")
+    
+    pseudotimes <- as.matrix(read_csv(pseudotime_file))
+    to_keep <- read_csv(to_keep_file)$to_keep
+    cluster  <- read_csv(cluster_file)$cluster
+  }
+  
+  # Load gene expression data ---------
+  sce <- NULL
+  hsmm_data_available <- data(package='HSMMSingleCell')$results[,3]
+  if("HSMM" %in% hsmm_data_available) {
+    data(HSMM)
+    sce <- fromCellDataSet(HSMM, use_exprs_as = 'fpkm')
+  } else if("HSMM_expr_matrix" %in% hsmm_data_available) {
+    library(HSMMSingleCell)
+    data(HSMM_expr_matrix)
+    data(HSMM_gene_annotation)
+    data(HSMM_sample_sheet)
+    
+    pd <- new('AnnotatedDataFrame', data = HSMM_sample_sheet)
+    fd <- new('AnnotatedDataFrame', data = HSMM_gene_annotation)
+    sce <- newSCESet(fpkmData = HSMM_expr_matrix, phenoData = pd, featureData = fd)
+  } else {
+    stop('No recognised data types in HSMMSingleCell')
+  }
+  
+  pd <- new('AnnotatedDataFrame', data = HSMM_sample_sheet)
+  fd <- new('AnnotatedDataFrame', data = HSMM_gene_annotation)
+  sce <- newSCESet(fpkmData = HSMM_expr_matrix, phenoData = pd, featureData = fd)
+  
+  # Subset off to the ones we want
+  sce <- sce[, cluster %in% 1:2]
+  sce <- sce[, which(to_keep == 1)]
+  sce <- calculateQCMetrics(sce)
+  
+  # Look at what genes we want in our differential expression analysis -----
+  qplot(fData(sce)$n_cells_exprs)
+  genes_to_use <- fData(sce)$n_cells_exprs > 0.1 * ncol(sce)
+  sce <- sce[genes_to_use,]
+  
+  # Time for some differential expression ------
+  pst <- pseudotimes[500:nrow(pseudotimes),]
+  return( list(sce = sce, pst = pst) )
+}
