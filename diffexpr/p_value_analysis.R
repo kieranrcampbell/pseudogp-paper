@@ -11,10 +11,21 @@ library(scater)
 library(embeddr)
 library(dplyr)
 
-source("prep_data.R")
-source("/net/isi-scratch/kieran/switch/sctools/R/normal_switch.R")
+## get the paths right
+base_dir <- ""
+system <- devtools::session_info()$platform$system
+if(length(grep("darwin", system)) > 0) {
+  # we're on the mac
+  base_dir <- "~/mount/"
+} else {
+  # we're on linux
+  base_dir <- "/net/isi-scratch/kieran/"
+}
 
-d <- "/net/isi-scratch/kieran/GP/pseudogp2/data/ldl01/"
+source(paste0(base_dir, "GP/pseudogp2/diffexpr/prep_data.R"))
+devtools::load_all(paste0(base_dir, "switch/sctools"))
+
+d <- paste0(base_dir, "GP/pseudogp2/data/ldl01/")
 files <- dir(d)
 files <- files[grep("pval", files)]
 ss_files <- files[grep("ss", files)]
@@ -37,6 +48,7 @@ nullfail_per_gene <- apply(switch_p, 1, function(x) sum(x == -2)) ## this should
 
 print(sum(optfail_per_gene))
 print(sum(nullfail_per_gene))
+stopifnot(sum(nullfail_per_gene) == 0) # we're in trouble if any of the null models failed
 
 switch_p_copy <- switch_p
 switch_p[switch_p == -1] <- 1
@@ -56,7 +68,8 @@ switch_prop_sig <- rowSums(switch_is_sig) / ncol(switch_p)
 df <- data.frame(ss = ss_prop_sig, sw = switch_prop_sig)
 scatter_plt <- ggplot(df) + 
   geom_point(aes(x = ss, y = sw), alpha = 0.3, size = 1) +
-  xlab("Smoothing splines") + ylab("Switch-like")
+  xlab("Smoothing splines") + ylab("Switch-like") +
+  geom_rug(aes(x = ss, y = sw), alpha = 0.05)
 
 names(df) <- c("Smoothing splines", "Switch-like")
 dfm <- melt(df, variable.name = "test", value.name = "prop_sig")
@@ -89,7 +102,7 @@ ggplot(df) +
 
 get_map <- function(x) mlv(x,method = "HSM")$M
 
-data <- load_data()
+data <- load_data(base_dir)
 sce <- data$sce ; pst <- data$pst
 
 pst_map <- apply(pst, 2, get_map)
@@ -99,16 +112,16 @@ sce$pseudotime <- pst_map
 good_switch <- gene_type == "switch"
 # ss_test <- pseudotime_test(sce[good_switch,], n_cores = 1)
 ss_models <- plot_pseudotime_model(sce[good_switch,], n_cores = 1, ncol = 3, 
-                                   facet_wrap_scale = "free", mask_min_expr = TRUE)
+                                   facet_wrap_scale = "free", mask_min_expr = FALSE)
 
 switch_plots <- lapply(which(good_switch), function(j) {
   x <- as.vector(exprs(sce)[j,])
-  model <- fit_alt_model(x, pseudotime(sce))
+  model <- norm_fit_alt_model(x, pseudotime(sce))
   model$type <- "sigmoid"
-  return( plot_model(model, x, pseudotime(sce)) )
+  return( norm_plot_model(model, x, pseudotime(sce)) )
 })
 
-plot_grid(ss_models, plot_grid(plotlist = switch_plots, ncol = 3), ncol = 2)
+switch_good_plt <- plot_grid(ss_models, plot_grid(plotlist = switch_plots, ncol = 3), ncol = 2)
 
 ## now ss model, bad switching
 good_ss <- gene_type == "smoothing"
@@ -116,16 +129,16 @@ set.seed(123)
 good_ss <- sample(which(good_ss), sum(good_switch)) # pick a number of equal size to good switch
 
 ss_models2 <- plot_pseudotime_model(sce[good_ss,], n_cores = 1, ncol = 3, 
-                                    facet_wrap_scale = "free", mask_min_expr = TRUE)
+                                    facet_wrap_scale = "free", mask_min_expr = FALSE)
 
 switch_plots2 <- lapply(good_ss, function(j) {
   x <- as.vector(exprs(sce)[j,])
-  model <- fit_alt_model(x, pseudotime(sce))
+  model <- norm_fit_alt_model(x, pseudotime(sce))
   model$type <- "sigmoid"
-  return( plot_model(model, x, pseudotime(sce)) )
+  return( norm_plot_model(model, x, pseudotime(sce)) )
 })
 
-plot_grid(ss_models2, plot_grid(plotlist = switch_plots2, ncol = 3), ncol = 2)
+ss_good_plt <- plot_grid(ss_models2, plot_grid(plotlist = switch_plots2, ncol = 3), ncol = 2)
 
 
 # Time for analysis of FDR -----------
@@ -151,7 +164,7 @@ plt_ss_median <- ggplot(dfc) + geom_point(aes(x = med_q_val, y = qval, colour = 
   geom_rug(data = filter(dfc, is_sig), aes(x = med_q_val, y = qval), sides = "b", alpha = 0.1, colour = "darkred")
 
 
-cowplot::ggsave(filename = "fdr.pdf")
+#cowplot::ggsave(filename = "fdr.pdf")
 
 ## plot for Chris with density
 cplt <- ggplot(dfc) + geom_point(aes(x = psig, y = qval, colour = is_sig), size = 2, alpha = 0.5) +
@@ -175,9 +188,9 @@ hist_top <- ggplot(filter(dfc, is_sig)) + geom_density(aes(x = psig), fill = "da
         axis.text.y = element_blank(), 
         plot.margin = grid::unit(c(3,-5.5,4,3), "mm")) +
   scale_x_continuous(limits = c(0, 1))
-pdf("cplt.pdf")
-gridExtra::grid.arrange(cplt, hist_top, ncol = 1, heights = c(4,1))
-dev.off()
+# pdf("cplt.pdf")
+# gridExtra::grid.arrange(cplt, hist_top, ncol = 1, heights = c(4,1))
+# dev.off()
 
 ## repeat the same for switch-like
 switch_pvals <- apply(exprs(sce), 1, function(x) {
@@ -204,7 +217,7 @@ plt_sw_median <- ggplot(dfs) + geom_point(aes(x = med_q_val, y = qval, colour = 
   geom_rug(data = filter(dfs, is_sig), aes(x = med_q_val, y = qval), sides = "b", alpha = 0.1, colour = "darkred")
 
 all_plot <- plot_grid(plt_ss_prop, plt_ss_median, plt_sw_prop, plt_sw_median, ncol = 2)
-cowplot::ggsave("all.pdf", plot = all_plot)
+## cowplot::ggsave("all.pdf", plot = all_plot)
 
 ## boxplot time
 ss_bxplt <- select(filter(dfc, is_sig), psig, med_q_val)
@@ -219,8 +232,41 @@ dm$metric <- plyr::mapvalues(dm$metric, from = c("psig", "med_q_val"), to = c("P
 # df_bxplt <- data.frame("Smoothing splines" = ss_bxplt, "Switch-like" = sw_bxplt)
 # dfbm <- melt(df_bxplt, variable.name = "test", value.name = "prop_sig")
 
-ggplot(dm, aes(y = value, x = type)) + geom_boxplot() + 
+bxplt <- ggplot(dm, aes(y = value, x = type)) + geom_boxplot() + 
   geom_point(position = position_jitter(width = 0.22), alpha = 0.1) +
   xlab("Differential gene test") + ylab("") +
   facet_wrap(~ metric) + cowplot::theme_cowplot() 
+cowplot::ggsave("boxplt.pdf", plot = bxplt, width = 5, height = 4, scale = 2)
 
+
+
+## save all plots to file
+plots <- list(scatter_plt, grid_plt, all_plot, bxplt, switch_good_plt, ss_good_plt)
+titles <- c("Proportion of times a gene is called significant (FDR 5%)",
+            " ",
+            "Statistics vs MAP pseudotime estimate, smoothing top, switch bottom",
+            "Statistics across genes called significant using MAP pseudotime estimate",
+            "Robust genes as called by switch-like",
+            "Robust genes as called by smoothing splines")
+pdf(paste0(base_dir, "GP/pseudogp2/diffexpr/all_plots.pdf"), width = 10, height = 6)
+for(i in 1:length(plots)) print(plots[[i]] + ggtitle(titles[i]))
+dev.off()
+
+
+
+
+# Let’s look at some of those 0 and 1 p-values from switch-like -----------
+
+is_one <- switch_pvals > 0.99
+switch_models <- sapply(which(is_one), function(j) {
+  x <- as.vector(exprs(sce)[j,])
+  model <- norm_fit_alt_model(x, pseudotime(sce))
+  model$log_lik
+})
+null_models <- sapply(which(is_one), function(j) {
+  x <- as.vector(exprs(sce)[j,])
+  model <- norm_fit_null_model(x)
+  -model$value
+})
+D <- null_models - switch_models
+plot(D, switch_pvals[is_one])
