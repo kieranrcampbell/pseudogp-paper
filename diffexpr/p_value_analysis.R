@@ -6,10 +6,15 @@ library(ggplot2)
 library(cowplot)
 library(modeest)
 library(matrixStats)
+library(reshape2)
+library(scater)
+library(embeddr)
+library(dplyr)
 
 source("prep_data.R")
+source("/net/isi-scratch/kieran/switch/sctools/R/normal_switch.R")
 
-d <- "/net/isi-scratch/kieran/GP/gpseudotime/data/decsv/"
+d <- "/net/isi-scratch/kieran/GP/pseudogp2/data/ldl01/"
 files <- dir(d)
 files <- files[grep("pval", files)]
 ss_files <- files[grep("ss", files)]
@@ -29,6 +34,9 @@ switch_p <- do.call("cbind", switch_pvals)
 ## and -1 if the null model couldn't be fit
 optfail_per_gene <- apply(switch_p, 1, function(x) sum(x == -1))
 nullfail_per_gene <- apply(switch_p, 1, function(x) sum(x == -2)) ## this should be none
+
+print(sum(optfail_per_gene))
+print(sum(nullfail_per_gene))
 
 switch_p_copy <- switch_p
 switch_p[switch_p == -1] <- 1
@@ -73,6 +81,7 @@ names(df) <- c('ss', 'sw')
 gene_type <- rep('agree', nrow(df))
 gene_type[df$sw > 0.8 & df$ss < 0.2] <- "switch"
 gene_type[df$ss > 0.99 & df$sw == 0] <- "smoothing"
+table(gene_type)
 df$gene_type <- gene_type
 ggplot(df) + 
   geom_point(aes(x = ss, y = sw, colour = gene_type), alpha = 0.3, size = 3) +
@@ -89,7 +98,8 @@ sce$pseudotime <- pst_map
 ## let's look at those funky genes - first good switch, bad smoothing
 good_switch <- gene_type == "switch"
 # ss_test <- pseudotime_test(sce[good_switch,], n_cores = 1)
-ss_models <- plot_pseudotime_model(sce[good_switch,], n_cores = 1, ncol = 3, facet_wrap_scale = "free")
+ss_models <- plot_pseudotime_model(sce[good_switch,], n_cores = 1, ncol = 3, 
+                                   facet_wrap_scale = "free", mask_min_expr = TRUE)
 
 switch_plots <- lapply(which(good_switch), function(j) {
   x <- as.vector(exprs(sce)[j,])
@@ -105,7 +115,8 @@ good_ss <- gene_type == "smoothing"
 set.seed(123)
 good_ss <- sample(which(good_ss), sum(good_switch)) # pick a number of equal size to good switch
 
-ss_models2 <- plot_pseudotime_model(sce[good_ss,], n_cores = 1, ncol = 3, facet_wrap_scale = "free")
+ss_models2 <- plot_pseudotime_model(sce[good_ss,], n_cores = 1, ncol = 3, 
+                                    facet_wrap_scale = "free", mask_min_expr = TRUE)
 
 switch_plots2 <- lapply(good_ss, function(j) {
   x <- as.vector(exprs(sce)[j,])
@@ -115,8 +126,6 @@ switch_plots2 <- lapply(good_ss, function(j) {
 })
 
 plot_grid(ss_models2, plot_grid(plotlist = switch_plots2, ncol = 3), ncol = 2)
-
-
 
 
 # Time for analysis of FDR -----------
@@ -198,15 +207,20 @@ all_plot <- plot_grid(plt_ss_prop, plt_ss_median, plt_sw_prop, plt_sw_median, nc
 cowplot::ggsave("all.pdf", plot = all_plot)
 
 ## boxplot time
-ss_bxplt <- filter(dfc, is_sig)$psig
-sw_bxplt <- filter(dfs, is_sig)$psig
-sw_bxplt <- c(sw_bxplt, rep(NA, length(ss_bxplt) - length(sw_bxplt)))
+ss_bxplt <- select(filter(dfc, is_sig), psig, med_q_val)
+sw_bxplt <- select(filter(dfs, is_sig), psig, med_q_val)
 
-df_bxplt <- data.frame("Smoothing splines" = ss_bxplt, "Switch-like" = sw_bxplt)
-dfbm <- melt(df_bxplt, variable.name = "test", value.name = "prop_sig")
+#sw_bxplt <- rbind(sw_bxplt, matrix(NA, nrow = nrow(ss_bxplt) - nrow(sw_bxplt), ncol = 2))
+d <- rbind(ss_bxplt, sw_bxplt)
+d$type <- as.factor(c(rep("Smoothing spline", nrow(ss_bxplt)), rep("Switch-like", nrow(sw_bxplt))))
+dm <- melt(d, id.vars = "type", variable.name = "metric")
+dm$metric <- plyr::mapvalues(dm$metric, from = c("psig", "med_q_val"), to = c("Proportion significant", "Median Q value"))
 
-ggplot(dfbm, aes(y = prop_sig, x = test)) + geom_boxplot() + ggplot2::theme_bw() +
-  geom_point(position = position_jitter(width = 0.07), alpha = 0.1) +
-  ylab("Proportion significant") + xlab("Differential gene test") +
-  ggtitle("Proportion significance for genes called significant with MAP pseudotime")
+# df_bxplt <- data.frame("Smoothing splines" = ss_bxplt, "Switch-like" = sw_bxplt)
+# dfbm <- melt(df_bxplt, variable.name = "test", value.name = "prop_sig")
+
+ggplot(dm, aes(y = value, x = type)) + geom_boxplot() + 
+  geom_point(position = position_jitter(width = 0.22), alpha = 0.1) +
+  xlab("Differential gene test") + ylab("") +
+  facet_wrap(~ metric) + cowplot::theme_cowplot() 
 

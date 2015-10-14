@@ -139,7 +139,7 @@ function precision_prior(tau, sigma, df)
     ll = 0 # log probability
     for j in 1:P
         for i in 1:N
-            ll += logpdf(Gamma(df / 2, df * sigma[j] / 2), tau[i,j])
+            ll += logpdf(Gamma(df / 2, 2 * sigma[j] / df), tau[i,j])
         end
     end
     return ll
@@ -416,6 +416,19 @@ function plot_pseudotime_trace(mh)
     chosen = sample(1:n, nchoose)
 
     df = convert(DataFrame, mh["tchain"][:, chosen])
+    df[:iter] = 1:(size(df)[1])
+    df = convert(DataFrame, df)
+    df_melted = stack(df, [1:nchoose])
+    names!(df_melted, [symbol(x) for x in ["variable", "value", "iter"]])
+
+    return Gadfly.plot(df_melted, x = "iter", y = "value", color = "variable", Geom.line)  
+end
+
+function plot_tau(mh)
+    nchoose = 6
+    chosen = sample(1:n, nchoose)
+
+    df = convert(DataFrame, mh["tau_chain"][:, chosen])
     df[:iter] = 1:(size(df)[1])
     df = convert(DataFrame, df)
     df_melted = stack(df, [1:nchoose])

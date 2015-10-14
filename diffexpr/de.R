@@ -57,9 +57,7 @@ if("HSMM" %in% hsmm_data_available) {
   stop('No recognised data types in HSMMSingleCell')
 }
 
-pd <- new('AnnotatedDataFrame', data = HSMM_sample_sheet)
-fd <- new('AnnotatedDataFrame', data = HSMM_gene_annotation)
-sce <- newSCESet(fpkmData = HSMM_expr_matrix, phenoData = pd, featureData = fd)
+sce@lowerDetectionLimit <- 0.1
 
 # Subset off to the ones we want
 sce <- sce[, cluster %in% 1:2]
@@ -67,8 +65,12 @@ sce <- sce[, which(to_keep == 1)]
 sce <- calculateQCMetrics(sce)
 
 # Look at what genes we want in our differential expression analysis -----
-qplot(fData(sce)$n_cells_exprs)
-genes_to_use <- fData(sce)$n_cells_exprs > 0.1 * ncol(sce)
+
+n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
+
+# Look at what genes we want in our differential expression analysis -----
+# qplot(fData(sce)$n_cells_exprs)
+genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
 sce <- sce[genes_to_use,]
 
 # Time for some differential expression ------
@@ -134,8 +136,8 @@ if(require(rhdf5)) {
   h5write(ss_pvals, h5outputfile, "ss")
   h5write(switch_pvals, h5outputfile, "switch")
 } else {
-  ss_pval_output <- paste0(rdir, "GP/gpseudotime/data/decsv/ss_pval_output", as.character(start), as.character(end), ".csv")
-  switch_pval_output <- paste0(rdir, "GP/gpseudotime/data/decsv/switch_pval_output", as.character(start), as.character(end), ".csv")
+  ss_pval_output <- paste0(rdir, "GP/pseudogp2/data/ldl01/ss_pval_output", as.character(start), as.character(end), ".csv")
+  switch_pval_output <- paste0(rdir, "GP/pseudogp2/data/ldl01/switch_pval_output", as.character(start), as.character(end), ".csv")
   
   write_csv(data.frame(ss_pvals), ss_pval_output)
   write_csv(data.frame(switch_pvals), switch_pval_output)
