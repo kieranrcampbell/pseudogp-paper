@@ -43,8 +43,11 @@ cowplot::plot_grid(plt1, plt2, ncol = 2)
 # Plot the differences ----------------------------------------------------
 
 imputed <- zimodel$x
-df <- data.frame(x = x, t = pseudotime(sce), imp = imputed)
-dfm <- reshape2::melt(df, id.vars = "t")
+df <- data.frame(Measured = x, Pseudotime = pseudotime(sce), Imputed = imputed)
+dfm <- reshape2::melt(df, id.vars = "Pseudotime", 
+                      variable.name = "Type", value.name = "Expression")
+
+dff <- dfm %>% group_by(Pseudotime, Expression) %>% filter(row_number() == 1)
 
 mu_func <- function(t, params) {
   L <- params[1] ; k <- params[2] ; t_0 <- params[3] ; r <- params[4]
@@ -53,12 +56,30 @@ mu_func <- function(t, params) {
 
 blue <- ggthemes::ggthemes_data$fivethirtyeight['blue']
 red <- ggthemes::ggthemes_data$fivethirtyeight['red']
-ggplot(dfm) + geom_point(aes(x = t, y = value, colour = variable), size =2.5) +
+
+ggplot(dff) + geom_point(aes(x = Pseudotime, y = Expression, colour = Type), size =2.5) +
   ggthemes::scale_colour_fivethirtyeight() +
   stat_function(fun = mu_func, args = list(model$par), color=blue) +
-  stat_function(fun = mu_func, args = list(zimodel$par), color = red) +
+  stat_function(fun = mu_func, args = list(zimodel$par), color = red) 
   
 ggsave(filename = paste0(base_dir, "GP/pseudogp2/diffexpr/zi.png"),
-       width = 3, height = 2, scale = 3)
+       width = 3.2, height = 1.8, scale = 3)
+
+
+# Quick play with flexmix -------------------------------------------------
+library(flexmix)
+pst <- pseudotime(sce)
+plot(pst, x)
+df <- data.frame(t = pst, x = x)
+df$xp <- df$x + replicate(length(df$x), jitter(0))
+
+cc <- FLXPmultinom(~ t)
+m <- flexmix(xp ~ k / (1 + exp(-t))),  data = df, k = 2, concomitant = cc)
+
+df$cluster <- clusters(m)
+ggplot(df, aes(x = t, y = x, colour = cluster)) + geom_point()
+
+
+
 
 

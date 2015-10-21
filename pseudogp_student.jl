@@ -130,16 +130,16 @@ function GP_marginal_log_likelihood(X, t, lambda, tau)
     return ll
 end
 
-function precision_prior(tau, sigma, df)
+function precision_prior(tau, s, df)
     #== Gamma prior on precision for scale-mixture
     representation of student's t distribution ==#
     N, P = size(tau)
-    @assert length(sigma) == P
+    @assert length(s) == P
     
     ll = 0 # log probability
     for j in 1:P
         for i in 1:N
-            ll += logpdf(Gamma(df / 2, 2 * sigma[j] / df), tau[i,j])
+            ll += logpdf(Gamma(df / 2, 2 * s[j] / df), tau[i,j])
         end
     end
     return ll
@@ -166,21 +166,21 @@ function lambda_prior(lambda, rate = 1.0)
     return lp
 end
 
-function sigma_prior_exponential(sigma, rate = 100.0)
-    @assert rate == 100.0
-    sp = sum(logpdf(Exponential(rate), sigma))
-    return sp
-end
+# function sigma_prior_exponential(sigma, rate = 100.0)
+#     @assert rate == 100.0
+#     sp = sum(logpdf(Exponential(rate), sigma))
+#     return sp
+# end
 
-function sigma_prior(sigma; alpha = 1.0, beta = 1.0)
+function s_precision_prior(s; alpha = 1.0, beta = 1.0)
     @assert alpha == beta == 1.0 # julia is confusing
-    sp = sum(logpdf(InverseGamma(alpha, beta), sigma))
+    sp = sum(logpdf(Gamma(alpha, beta), sigma))
     return sp
 end
 
 
 function acceptance_ratio(X, tp, t, tau_prop, tau, lambda_prop, lambda, 
-    sigma_prop, sigma, r, s, gamma, df)
+    s_prop, s, r, gamma, df)
     """ 
     Compute the acceptance ratio for 
     @param X N-by-D data array for N points in D dimensions
@@ -189,15 +189,14 @@ function acceptance_ratio(X, tp, t, tau_prop, tau, lambda_prop, lambda,
     @param thetap Propose theta = [lambda, sigma]
     @param theta Previous theta
     @param r > 0 Corp parameter
-    @param s Tempering parameter: (log likelihood * prior) is raised to this value
     @param gamma Rate for exponential prior on lambda
     """
     likelihood = GP_marginal_log_likelihood(X, tp, lambda_prop, tau_prop) -
     GP_marginal_log_likelihood(X, t, lambda, tau)
-    tau_prior = precision_prior(tau_prop, sigma_prop, df) - precision_prior(tau, sigma, df)
+    tau_prior = precision_prior(tau_prop, s_prop, df) - precision_prior(tau, s, df)
     t_prior = corp_prior(tp, r) - corp_prior(t, r)
     l_prior = lambda_prior(lambda_prop, gamma) - lambda_prior(lambda, gamma)
-    s_prior = sigma_prior(sigma_prop) - sigma_prior(sigma)
+    s_prior = s_precision_prior(s_prop) - s_precision_prior(s)
     return likelihood + tau_prior + t_prior + l_prior + s_prior
 end
 

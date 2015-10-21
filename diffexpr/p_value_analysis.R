@@ -151,7 +151,7 @@ dfc <- mutate(dfc, is_sig = qval < 0.05)
 plt_ss_prop <- ggplot(dfc) + geom_point(aes(x = psig, y = qval, colour = is_sig), size = 2, alpha = 0.5) +
   ggthemes::scale_colour_economist() + 
   geom_hline(yintercept = 0.05, linetype = 1, colour = 'darkred') + 
-  ylab("Q-val for MAP pseudotime estimate") + xlab(" ") +
+  ylab(expression("Q-val for MAP pseudotime")) + xlab(" ") +
   theme(legend.position = "none") + 
   geom_rug(data = filter(dfc, is_sig), aes(x = psig, y = qval), sides = "b", alpha = 0.1, colour = "darkred")
 
@@ -204,7 +204,7 @@ dfs <- mutate(dfs, is_sig = qval < 0.05)
 plt_sw_prop <- ggplot(dfs) + geom_point(aes(x = psig, y = qval, colour = is_sig), size = 2, alpha = 0.5) +
   ggthemes::scale_colour_economist() + 
   geom_hline(yintercept = 0.05, linetype = 1, colour = 'darkred') + 
-  ylab("Q-val for MAP pseudotime estimate") + xlab("Proportion significant (FDR 5%)") +
+  ylab(expression("Q-val for MAP pseudotime")) + xlab("Proportion significant (FDR 5%)") +
   theme(legend.position = "none") + 
   geom_rug(data = filter(dfs, is_sig), aes(x = psig, y = qval), sides = "b", alpha = 0.1, colour = "darkred")
 
@@ -216,8 +216,9 @@ plt_sw_median <- ggplot(dfs) + geom_point(aes(x = med_q_val, y = qval, colour = 
   theme(legend.position = "none") + 
   geom_rug(data = filter(dfs, is_sig), aes(x = med_q_val, y = qval), sides = "b", alpha = 0.1, colour = "darkred")
 
-all_plot <- plot_grid(plt_ss_prop, plt_ss_median, plt_sw_prop, plt_sw_median, ncol = 2)
-## cowplot::ggsave("all.pdf", plot = all_plot)
+labels <- c("A", "B", "C", "D")
+all_plot <- plot_grid(plt_ss_prop, plt_ss_median, plt_sw_prop, plt_sw_median, ncol = 2, labels = labels)
+cowplot::ggsave("fdr.png", plot = all_plot, width = 3, height = 2, scale = 4)
 
 ## boxplot time
 ss_bxplt <- select(filter(dfc, is_sig), psig, med_q_val)
