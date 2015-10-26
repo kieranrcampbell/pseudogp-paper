@@ -7,14 +7,15 @@ include("../pseudogp_student_fixed.jl"); # load in inference & plotting methods;
 
 
 function run_fixed(i; h5infile = "../data/multisample.h5", 
-	h5outfile = "../data/multietrace.h5",
+	h5outfile = "/net/isi-project/CW010_CAMPBELL_SCNGEN/data/GP/multisample/multitrace.h5",
 	niter = 2e5, tau_init_file = "../data/tauchain.h5")
 
 	sample_i = string("sample_", i)
 	X = h5read(h5infile, string(sample_i, "/X"))
 
 	srand(123)
-	tau_chain = mh1["tau_chain"];
+
+	tau_chain = h5read(tau_init_file, "tauchain")
 	bp = int(size(tau_chain)[1] / 2)
 
 	include("../pseudogp_student_fixed.jl");
@@ -23,7 +24,7 @@ function run_fixed(i; h5infile = "../data/multisample.h5",
 	N, P = size(X)
 
 
-	n_iter = int(1e6)
+	n_iter = int(5e5)
 	burn = n_iter / 2
 
 	thin = int(n_iter / 1000)

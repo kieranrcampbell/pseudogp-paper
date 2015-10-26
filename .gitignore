@@ -1,0 +1,7 @@
+diffexpr/run_de_*
+data/*
+*.pdf
+*.png
+\._*
+*~
+.DS_Store

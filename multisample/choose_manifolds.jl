@@ -24,7 +24,7 @@ X_old = X
 X = [xs ys];
 
 srand(123)
-n_multisample = 100
+n_multisample = 50
 n = size(X)[1]
 sample_size = int(n/2)
 output_file = "../data/multisample.h5"
@@ -35,5 +35,5 @@ for i in 1:n_multisample
 	X_s = X[to_sample,:]
 
 	h5write(output_file, string(sample_name, "/to_sample"), to_sample)
-	h5write(output_file, string(sample_name, "X"), X_s)
+	h5write(output_file, string(sample_name, "/X"), X_s)
 end
