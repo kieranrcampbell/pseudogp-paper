@@ -33,9 +33,11 @@ function cross_pairwise_distance(t1, t2)
     return T
 end
 
-function covariance_matrix(t, lambda, sigma)
+function covariance_matrix(t, lambda, s)
+    """ Covariance matrix for (noisy) observations -
+    nb s is precision """
     T = pairwise_distance(t)
-    Sigma = exp(-lambda * T) + sigma * eye(length(t))
+    Sigma = exp(-lambda * T) + 1/s * eye(length(t))
     return Sigma
 end
 
@@ -44,12 +46,12 @@ function cross_covariance_matrix(t1, t2, lambda)
     return exp(-lambda * T)
 end
 
-function log_likelihood(X, t, lambda, sigma)
-    @assert length(lambda) == length(sigma) == size(X)[2]
+function log_likelihood(X, t, lambda, s)
+    @assert length(lambda) == length(s) == size(X)[2]
     n, ndim = size(X)
     ll = 0
     for i in 1:ndim
-        ll += sum(logpdf(MultivariateNormal(zeros(length(t)), covariance_matrix(t, lambda[i], sigma[i])), X[:,i]))
+        ll += sum(logpdf(MultivariateNormal(zeros(length(t)), covariance_matrix(t, lambda[i], s[i])), X[:,i]))
     end
     return ll
 end
@@ -77,20 +79,14 @@ function lambda_prior(lambda, rate = 1.0)
     return lp
 end
 
-function sigma_prior_exponential(sigma, rate = 100.0)
-    @assert rate == 100.0
-    sp = sum(logpdf(Exponential(rate), sigma))
-    return sp
-end
-
-function sigma_prior(sigma; alpha = 1.0, beta = 1.0)
+function s_prior(s; alpha = 1.0, beta = 1.0)
     @assert alpha == beta == 1.0 # julia is confusing
-    sp = sum(logpdf(InverseGamma(alpha, beta), sigma))
+    sp = sum(logpdf(Gamma(alpha, beta), s))
     return sp
 end
 
 
-function acceptance_ratio(X, tp, t, lambda_prop, lambda, sigma_prop, sigma, r, s, gamma)
+function acceptance_ratio(X, tp, t, lambda_prop, lambda, s_prop, s, r, gamma)
     """ 
     Compute the acceptance ratio for 
     @param X N-by-D data array for N points in D dimensions
@@ -98,15 +94,15 @@ function acceptance_ratio(X, tp, t, lambda_prop, lambda, sigma_prop, sigma, r, s
     @param t Previous pseudotime length N
     @param thetap Propose theta = [lambda, sigma]
     @param theta Previous theta
+    @param s Precision parameter for likelihood
     @param r > 0 Corp parameter
-    @param s Tempering parameter: (log likelihood * prior) is raised to this value
     @param gamma Rate for exponential prior on lambda
     """
-    likelihood = log_likelihood(X, tp, lambda_prop, sigma_prop) - log_likelihood(X, t, lambda, sigma)
+    likelihood = log_likelihood(X, tp, lambda_prop, s_prop) - log_likelihood(X, t, lambda, s)
     t_prior = corp_prior(tp, r) - corp_prior(t, r)
     l_prior = lambda_prior(lambda_prop, gamma) - lambda_prior(lambda, gamma)
-    s_prior = sigma_prior(sigma_prop) - sigma_prior_exponential(sigma)
-    return s * (likelihood + t_prior + l_prior + s_prior) 
+    sp = s_prior(s_prop) - s_prior(s)
+    return likelihood + t_prior + l_prior + sp
 end
 
 function couple_update_acceptance_ratio(X, t1, t2, theta1, theta2, r, s1, s2)
@@ -114,17 +110,7 @@ function couple_update_acceptance_ratio(X, t1, t2, theta1, theta2, r, s1, s2)
     return  ( (s1 - s2) * ( h(X, t2, theta2, r) - h(X, t1, theta1, r) ) )
 end
 
-# function acceptance_ratio_likelihood_only(X, tp, t, thetap, theta, r, s)
-#     """ 
-#     Same as acceptance ratio except only the log_likelihood is raised to s
-    
-#     @param s Tempering parameter: (log likelihood) is raised to this value
-#     """
-#     likelihood = log_likelihood(X, tp, thetap) - log_likelihood(X, t, theta)
-#     prior = corp_prior(tp, r) - corp_prior(t, r)
-#     #println(likelihood, " ",  prior)
-#     return s * likelihood + prior 
-# end
+
 
 function couple_update_acceptance_ratio_likelihood_only(X, t1, t2, theta1, theta2, r, s1, s2)
     """ Same as couple_acceptance_ratio except only the likelihood is raised to s """
@@ -155,7 +141,7 @@ end;
 
 
 function B_GPLVM_MH(X, n_iter, burn, thin, 
-    t, tvar, lambda, lvar, sigma, svar;
+    t, tvar, lambda, lvar, s, svar;
     r = 1, return_burn = true, cell_swap_probability = 0,
     gamma = 1.0)
     
@@ -167,7 +153,7 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
     @assert ndim == 2 # for now
     @assert cell_swap_probability >= 0
     @assert cell_swap_probability <= 1
-    @assert length(lambda) == length(sigma) == ndim
+    @assert length(lambda) == length(s) == ndim
     @assert burn < n_iter
     @assert length(t) == n
     @assert length(lvar) == length(svar) == ndim
@@ -181,15 +167,15 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
     lambda_chain = zeros(chain_size, ndim)
     lambda_chain[1,:] = lambda
 
-    sigma_chain = zeros(chain_size, ndim)
-    sigma_chain[1,:] = sigma
+    s_chain = zeros(chain_size, ndim)
+    s_chain[1,:] = s
     
     accepted = zeros(n_iter)
 
     loglik_chain = zeros(chain_size)
     prior_chain = zeros(chain_size)
     
-    loglik_chain[1] = log_likelihood(X, t, lambda, sigma)
+    loglik_chain[1] = log_likelihood(X, t, lambda, s)
     prior_chain[1] = corp_prior(t, r)
 
     # alpha_chain = zeros(chain_size - 1)
@@ -200,7 +186,7 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
         # proposals
         t_prop = propose_t(t, tvar)
         lambda_prop = propose(lambda, lvar)
-        sigma_prop = propose(sigma, svar)
+        s_prop = propose(s, svar)
 
         if cell_swap_probability > 0
             if rand() < cell_swap_probability
@@ -212,8 +198,8 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
 
         # calculate acceptance ratio
         alpha = acceptance_ratio(X, t_prop, t, 
-                                lambda_prop, lambda, sigma_prop, 
-                                sigma, r, 1, gamma)
+                                lambda_prop, lambda, s_prop, 
+                                s, r, gamma)
 
         rnd = log(rand())
 
@@ -223,7 +209,7 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
             accepted[i] = 1
             t = t_prop
             lambda = lambda_prop
-            sigma = sigma_prop
+            s = s_prop
         end
         
     
@@ -232,8 +218,8 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
             j = int(i / thin) + 1
             tchain[j,:] = t
             lambda_chain[j,:] = lambda
-            sigma_chain[j,:] = sigma
-            loglik_chain[j] = log_likelihood(X, t, lambda, sigma)
+            s_chain[j,:] = s
+            loglik_chain[j] = log_likelihood(X, t, lambda, s)
             prior_chain[j] = corp_prior(t, r)
         end
     end
@@ -245,7 +231,7 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
     
     rdict = {"tchain" => tchain[burnt:end,:],
         "lambda_chain" => lambda_chain[burnt:end,:],
-        "sigma_chain" => sigma_chain[burnt:end,:],
+        "s_chain" => s_chain[burnt:end,:],
         "acceptance_rate" => (sum(accepted) / length(accepted)),
         "burn_acceptance_rate" => (sum(accepted[burnt:end]) / length(accepted[burnt:end])),
         "r" => r,
