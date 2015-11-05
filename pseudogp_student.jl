@@ -174,7 +174,7 @@ end
 
 function s_precision_prior(s; alpha = 1.0, beta = 1.0)
     @assert alpha == beta == 1.0 # julia is confusing
-    sp = sum(logpdf(Gamma(alpha, beta), sigma))
+    sp = sum(logpdf(Gamma(alpha, beta), s))
     return sp
 end
 
@@ -232,7 +232,7 @@ end;
 
 function pseudogp_student(X, n_iter, burn, thin, 
     tau, tauvar, t, tvar, lambda, lvar, sigma, svar; 
-    r = 1, return_burn = true, cell_swap_probability = 0,
+    r = 1, return_burn = true, 
     gamma = 1.0, df = 1.0)
     #=
     GP-LVM with students-t likelihood. For N cells represented in 
@@ -305,21 +305,12 @@ function pseudogp_student(X, n_iter, burn, thin,
         lambda_prop = propose(lambda, lvar)
         sigma_prop = propose(sigma, svar)
 
-        # Cell swapping ----------
-        if cell_swap_probability > 0
-            if rand() < cell_swap_probability
-                # swap two cells at random
-                to_swap = sample(1:length(t), 2, replace = false)
-                t_prop[to_swap] = t_prop[reverse(to_swap)]
-            end
-        end
-
         # Acceptance ratio & accept - reject -------------
         alpha = acceptance_ratio(X, t_prop, t, 
                                 tau_prop, tau,
                                 lambda_prop, lambda, 
                                 sigma_prop, sigma, 
-                                r, 1, gamma, df)
+                                r, gamma, df)
 
         rnd = log(rand())
 

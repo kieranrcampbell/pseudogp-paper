@@ -13,7 +13,7 @@ using StatsBase
 function pairwise_distance(t)
     n = length(t)
     T = zeros((n,n))
-    for i in 1:n
+    for i in 1:(n-1)
         for j in (i+1):n
             T[i,j] = (t[i] - t[j])^2
         end
@@ -73,9 +73,8 @@ function corp_prior(t, r = 1)
     return 2 * r * ll
 end
 
-function lambda_prior(lambda, rate = 1.0)
+function lambda_exp_prior(lambda, rate)
     lp = sum(logpdf(Exponential(rate), lambda))
-    # lp = 0
     return lp
 end
 
@@ -100,7 +99,7 @@ function acceptance_ratio(X, tp, t, lambda_prop, lambda, s_prop, s, r, gamma)
     """
     likelihood = log_likelihood(X, tp, lambda_prop, s_prop) - log_likelihood(X, t, lambda, s)
     t_prior = corp_prior(tp, r) - corp_prior(t, r)
-    l_prior = lambda_prior(lambda_prop, gamma) - lambda_prior(lambda, gamma)
+    l_prior = lambda_exp_prior(lambda_prop, gamma) - lambda_exp_prior(lambda, gamma)
     sp = s_prior(s_prop) - s_prior(s)
     return likelihood + t_prior + l_prior + sp
 end
@@ -174,9 +173,11 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
 
     loglik_chain = zeros(chain_size)
     prior_chain = zeros(chain_size)
+    lambda_prior_chain = zeros(chain_size)
     
     loglik_chain[1] = log_likelihood(X, t, lambda, s)
     prior_chain[1] = corp_prior(t, r)
+    lambda_prior_chain[1] = lambda_exp_prior(lambda, gamma)
 
     # alpha_chain = zeros(chain_size - 1)
     # rnd_chain = zeros(chain_size - 1)
@@ -188,13 +189,6 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
         lambda_prop = propose(lambda, lvar)
         s_prop = propose(s, svar)
 
-        if cell_swap_probability > 0
-            if rand() < cell_swap_probability
-                # swap two cells at random
-                to_swap = sample(1:length(t), 2, replace = false)
-                t_prop[to_swap] = t_prop[reverse(to_swap)]
-            end
-        end
 
         # calculate acceptance ratio
         alpha = acceptance_ratio(X, t_prop, t, 
@@ -221,6 +215,7 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
             s_chain[j,:] = s
             loglik_chain[j] = log_likelihood(X, t, lambda, s)
             prior_chain[j] = corp_prior(t, r)
+            lambda_prior_chain[j] = lambda_exp_prior(lambda, gamma)
         end
     end
     
@@ -237,6 +232,7 @@ function B_GPLVM_MH(X, n_iter, burn, thin,
         "r" => r,
         "loglik_chain" => loglik_chain,
         "prior_chain" => prior_chain,
+        "lambda_prior_chain" => lambda_prior_chain,
         "params" => {"n_iter" => n_iter,
                     "burn" => burn,
                     "thin" => thin,
@@ -257,21 +253,21 @@ end
 # where $K_*$ is the covariance matrix between the latent $\mathbf{t}$ and the predictive $\mathbf{t'}$, where typically $\mathbf{t'}$ is sampled as $m$ equally spaced points on the interval [0, 1].
 
 
-function predict(tp, t_map, lambda_map, sigma_map, X)
+function predict(tp, t_map, lambda_map, s_map, X)
     #= Returns MAP prediction of mean function given:
     @param tp Values of t at which to predict function
     @param t_map Map estimate of latent pseudotimes
     @param lambda_map Map estimate of lambda
-    @param sigma_map Map estimate of sigma
+    @param s_map Map estimate of precision
     =#
-    @assert length(lambda_map) == length(sigma_map) == size(X)[2]
+    @assert length(lambda_map) == length(s_map) == size(X)[2]
     @assert length(t_map) == size(X)[1]
     ndim = size(X)[2]
     np = length(tp)
 
     Xp = fill(0.0, (np, ndim))
     for i in 1:ndim
-        K_map = covariance_matrix(t_map, lambda_map[i], sigma_map[i])
+        K_map = covariance_matrix(t_map, lambda_map[i], 1 / s_map[i])
         K_star_transpose = cross_covariance_matrix(tp, t_map, lambda_map[i])
 
         matrix_prefactor = K_star_transpose * inv(K_map)
@@ -314,10 +310,10 @@ end
 function plot_posterior_mean(mh, tp, X)
     burn = mh["params"]["burn_thin"]
     lambda_map = mean(mh["lambda_chain"][burn:end,:], 1)
-    sigma_map = mean(mh["sigma_chain"][burn:end,:], 1)
+    s_map = mean(mh["s_chain"][burn:end,:], 1)
 
     t_map = mean(mh["tchain"][burn:end,:], 1)
-    mu_p = predict(tp, t_map, lambda_map, sigma_map, X)
+    mu_p = predict(tp, t_map, lambda_map, s_map, X)
 
     return Gadfly.plot(layer(x = X[:,1], y = X[:,2], color = t_gt, Geom.point) ,
     layer(x = mu_p[:,1], y = mu_p[:,2], Geom.line(preserve_order = 1), 
@@ -338,6 +334,13 @@ function plot_prior(mh)
     Gadfly.plot(df, x = "iter", y = "value", Geom.line)
 end
 
+
+function plot_lambda_prior(mh)
+    df = DataFrame()
+    df[:value] = mh["lambda_prior_chain"]
+    df[:iter] = 1:(size(df)[1]) # (burn + 2)
+    Gadfly.plot(df, x = "iter", y = "value", Geom.line)
+end
 
 
 #----------------------- Variance measures

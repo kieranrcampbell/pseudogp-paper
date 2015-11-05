@@ -74,7 +74,7 @@ df <- data.frame(t = pst, x = x)
 df$xp <- df$x + replicate(length(df$x), jitter(0))
 
 cc <- FLXPmultinom(~ t)
-m <- flexmix(xp ~ k / (1 + exp(-t))),  data = df, k = 2, concomitant = cc)
+m <- flexmix(xp ~ I(1 / (1 + exp(-t))),  data = df, k = 2, concomitant = cc)
 
 df$cluster <- clusters(m)
 ggplot(df, aes(x = t, y = x, colour = cluster)) + geom_point()
