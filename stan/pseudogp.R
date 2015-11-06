@@ -2,29 +2,36 @@ library(rstan)
 library(rhdf5)
 library(MCMCglmm)
 library(coda)
+library(ggplot2)
 
-setwd("/net/isi-scratch/kieran/GP/stan")
+setwd("~/mount/GP/stan")
 
-h5file <- "/net/isi-scratch/kieran/GP/pseudogp2/data/5m_run_with_tau_traces.h5"
- #h5file = "/net/isi-scratch/kieran/GP/pseudogp2/data/ear_embeddings.h5"
+h5file <- "~/mount/GP/pseudogp2/data/5m_run_with_tau_traces.h5"
+h5file = "~/mount/GP/pseudogp2/data/ear_embeddings.h5"
 X <- h5read(h5file, "X")
 X <- apply(X, 2, function(x) (x - mean(x)) / sd(x))
 t_gt <- h5read(h5file, "t_gt")
 
-data <- list(X = X, N = nrow(X), Ga = 5)
+data <- list(X = X, N = nrow(X))
 
 init <- list(list(t = runif(length(t_gt), 0.49, 0.51),
              lambda = c(1,1),
              sigma = c(1,1)))
 
 fit <- stan(file = "pseudogp.stan", data = data, 
-            init = init, iter = 1000, chains = 1)
+            iter = 1000, chains = 1)
+
+# opt <- optimizing(get_stanmodel(fit), data = data)
+# t_opt <- opt$par[grep("t", names(opt$par))]
+# plot(t_gt, t_opt)
 
 plot(fit, pars = "t")
 plot(fit, pars = "lambda")
+plot(fit, pars = "g")
 
 pst <- extract(fit, "t")
 
+#tmcmc <- mcmc(pst$t)
 tmcmc <- mcmc(pst$t)
 post_mean <- posterior.mode(tmcmc)
 plot(t_gt, post_mean)
@@ -73,8 +80,13 @@ plot_posterior_mean <- function(t, l, s, nnt = 80) {
 }
 
 t <- posterior.mode(tmcmc); l <- posterior.mode(lmcmc) ; s <- posterior.mode(smcmc)
-plot_posterior_mean(t, l, s)
+plot_posterior_mean(t, l, s, nnt = 200)
 
 ind <- sample(nrow(tmcmc), 4)
 plts <- lapply(ind, function(i) plot_posterior_mean(tmcmc[i,], lmcmc[i,], smcmc[i,]))
 cowplot::plot_grid(plotlist = plts)
+
+
+tracefile <- "~/mount/GP/pseudogp2/data/stan_traces.h5"
+h5createFile(tracefile)
+h5write(pst$t, tracefile, "pst")
