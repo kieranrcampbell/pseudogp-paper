@@ -3,29 +3,20 @@ library(rhdf5)
 library(MCMCglmm)
 library(coda)
 library(ggplot2)
+library(moments)
 
+set.seed(123)
 
-base_dir <- "/net/isi-scratch/kieran/"
-setwd(paste0(base_dir, "GP/pseudogp2/stan"))
-
-h5file <- paste0(base_dir, "GP/pseudogp2/data/5m_run_with_tau_traces.h5")
-#h5file = "~/mount/GP/pseudogp2/data/ear_embeddings.h5"
+setwd("/net/isi-scratch/kieran/GP/pseudogp2/")
+h5file = "data/ear_embeddings.h5"
 X <- h5read(h5file, "X")
 X <- apply(X, 2, function(x) (x - mean(x)) / sd(x))
 t_gt <- h5read(h5file, "t_gt")
 
 data <- list(X = X, N = nrow(X))
 
-init <- list(list(t = runif(length(t_gt), 0.49, 0.51),
-             lambda = c(1,1),
-             sigma = c(1,1)))
-
-fit <- stan(file = "pseudogp.stan", data = data, 
-            iter = 1000, chains = 1)
-
-# opt <- optimizing(get_stanmodel(fit), data = data)
-# t_opt <- opt$par[grep("t", names(opt$par))]
-# plot(t_gt, t_opt)
+fit <- stan(file = "stan/pseudogp.stan", data = data, 
+            iter = 2000, chains = 1)
 
 plot(fit, pars = "t")
 plot(fit, pars = "lambda")
@@ -38,15 +29,13 @@ tmcmc <- mcmc(pst$t)
 post_mean <- posterior.mode(tmcmc)
 plot(t_gt, post_mean)
 
-rstan::traceplot(fit, pars = "lambda")
-plot(tmcmc, pars = "t")
-
-lmcmc <- mcmc(extract(fit, "lambda")$lambda)
 smcmc <- mcmc(extract(fit, "sigma")$sigma)
+lmcmc <- mcmc(extract(fit, "lambda")$lambda)
 
+smap <- posterior.mode(smcmc)
+lmap <- posterior.mode(lmcmc)
 
-## plot the predictive mean
-
+plot_posterior_mean(post_mean, lmap, smap)
 
 cov_matrix <- function(t1, t2, lambda, sigma = NULL) {
   n1 <- length(t1)
@@ -82,16 +71,11 @@ plot_posterior_mean <- function(t, l, s, nnt = 80) {
     geom_rug(data = data.frame(X, t_gt), aes(x = X1, y = X2))
 }
 
-t <- posterior.mode(tmcmc); l <- posterior.mode(lmcmc) ; s <- posterior.mode(smcmc)
-plot_posterior_mean(t, l, s, nnt = 200)
 
-ind <- sample(nrow(tmcmc), 4)
-plts <- lapply(ind, function(i) plot_posterior_mean(tmcmc[i,], lmcmc[i,], smcmc[i,]))
-cowplot::plot_grid(plotlist = plts)
+# Reconstruct covariance matrix -------------------------------------------
 
-
-tracefile <- "~/mount/GP/pseudogp2/data/stan_traces.h5"
-h5createFile(tracefile)
-h5write(pst$t, tracefile, "pst")
-
+t <- post_mean ; l <- lmap; s <- smap
 K_y <- lapply(1:2, function(i) cov_matrix(t, t, as.numeric(l[i]), as.numeric(s[i])))
+
+
+

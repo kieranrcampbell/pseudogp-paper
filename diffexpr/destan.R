@@ -11,10 +11,8 @@ library(scater)
 library(embeddr)
 
 
-
-
 rdir <- "/net/isi-scratch/kieran/"
-source(paste0(rdir, "switch/sctools/R/normal_switch.R"))
+load_all(paste0(rdir, "switch/sctools/"))
 # load_all(paste0(rdir, "embeddr/embeddr"))
 # load_all(paste0(rdir, "scater/scater"))
 
@@ -23,12 +21,12 @@ cluster <- to_keep <- pseudotimes <- NULL
 # Load pseudotime assignments ------
 if(require(rhdf5)) { # woo hdf5 is actually installed
   h5file <- paste0(rdir, "GP/gpseudotime/data/pseudotime_traces_6e6iterations_5e5gamma_5_10_2015.h5")
-  h5ls(h5file)
-  
+  tracefile <- paste0(rdir, "GP/pseudogp2/data/stan_traces.h5")
   to_keep <- h5read(h5file, "to_keep")
-  pseudotimes <- h5read(h5file, "tchain")
+  pst <- pseudotimes <- h5read(tracefile, "pst")
   cluster <- h5read(h5file, "embeddr_cluster")
 } else {
+  stop("implement this properly")
   pseudotime_file <- paste0(rdir, "GP/gpseudotime/data/decsv/pseudotimes.csv")
   to_keep_file <- paste0(rdir, "GP/gpseudotime/data/decsv/to_keep.csv")
   cluster_file <- paste0(rdir, "GP/gpseudotime/data/decsv/cluster.csv")
@@ -74,7 +72,7 @@ genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at
 sce <- sce[genes_to_use,]
 
 # Time for some differential expression ------
-pst <- pseudotimes[500:nrow(pseudotimes),]
+#pst <- pseudotimes[500:nrow(pseudotimes),]
 
 
 # What range of pst are we looking at?
@@ -108,34 +106,25 @@ ii <- 0
 
 # foreach(i = 1:n_pst) %dopar% {
 for(i in 1:n_pst) {
-# smoothing splines
   ii <- i
-  # print("Getting pseudotime")
   sce$pseudotime <- t_i <- pst[i,]
   
-  print("Spline testing")
   ss_test <- pseudotime_test(sce, n_cores = 1)
-  print("Done")
-  
   ss_pvals[,i] <- ss_test$p_val
   
   # switch model
-  print("Switch testing")
-  switch_pv <- sapply(1:ngenes, function(j) {
-    # print("Assigning x")
-    x <- exprs(sce)[j,]
-    # print("Diff expr test")
-    diff_expr_test(x, t_i)[1]
-  })
-  print("Done")
-  switch_pvals[,i] <- switch_pv
+  switch_pv <- testDE(sce)
+  switch_pvals[,i] <- switch_pv[1,]
 }
 
 if(require(rhdf5)) {
-  h5outputfile <- paste0(rdir, "GP/gpseudotime/data/diffexpr.h5")
+  h5outputfile <- paste0(rdir, "GP/pseudogp2/data/stan_diffexpr.h5")
+  #h5createGroup(h5outputfile, "ss")
+  #h5createGroup(h5outputfile, "switch")
   h5write(ss_pvals, h5outputfile, paste0("ss/", as.character(start), "_", as.character(end)))
   h5write(switch_pvals, h5outputfile, paste0("switch/", as.character(start), "_", as.character(end)))
 } else {
+  stop("reimplement!")
   ss_pval_output <- paste0(rdir, "GP/pseudogp2/data/ldl01/ss_pval_output", as.character(start), as.character(end), ".csv")
   switch_pval_output <- paste0(rdir, "GP/pseudogp2/data/ldl01/switch_pval_output", as.character(start), as.character(end), ".csv")
   

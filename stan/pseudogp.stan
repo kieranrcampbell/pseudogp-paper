@@ -48,7 +48,8 @@ model {
     Sigma2[k,k] <- 1 + sigma[2] + 10e-3;
   }
 
-  g ~ gamma(30.0, 2.0);
+  g ~ gamma(40.0, 4.0);
+
   for(i in 1:2) {
     sigma[i] ~ inv_gamma(1.0, 1.0);
     lambda[i] ~ exponential(g);

@@ -7,7 +7,7 @@ kieran.campbell@sjc.ox.ac.uk
 data {
   int<lower = 1> N;
   matrix[N, 2] X;
-  real<lower = 0> Ga;
+  real<lower = 0> prior_var;
 }
 
 transformed data {
@@ -25,6 +25,7 @@ parameters {
   real<lower = 0> lambda[2];
   real<lower = 0> sigma[2];
   real t[N];
+  real<lower = 0> g;
 }
 
 model {
@@ -47,13 +48,15 @@ model {
     Sigma2[k,k] <- 1 + sigma[2] + 10e-3;
   }
 
+  g ~ gamma(30.0, 2.0);
+
   for(i in 1:2) {
     sigma[i] ~ inv_gamma(1.0, 1.0);
-    lambda[i] ~ exponential(Ga);
+    lambda[i] ~ exponential(g);
   }
 
   for(i in 1:N) {
-    t[i] ~ normal(0.5, 1);
+    t[i] ~ normal(0.5, prior_var);
   }
 
   X1 ~ multi_normal(mu, Sigma1);
