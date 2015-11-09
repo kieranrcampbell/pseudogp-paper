@@ -25,18 +25,29 @@ sce <- load_data()$sce
 sce$pseudotime <- t_gt
 sce <- plotPCA(sce, colour_by = "pseudotime", return_SCESet = TRUE)
 Y <- redDim(sce)
-
 Y <- apply(Y, 2, function(x) (x - mean(x)) / sd(x)) # our PCA embedding
 
+
+# T-SNE representation ----------------------------------------------------
+
+set.seed(1234)
+sce <- plotTSNE(sce, colour_by = "pseudotime", perplexity = 3, return_SCESet = TRUE)
+Z <- redDim(sce)
+Z <- apply(Z, 2, function(x) (x - mean(x)) / sd(x)) # our t-SNE embedding
 stopifnot(all(dim(X) == dim(Y)))
-data <- list(X = X, Y = Y, N = nrow(X))
+stopifnot(all(dim(Z) == dim(X)))
 
-fit <- stan(file = "pgpmulti.stan", data = data, 
+Ns <- 3
+dx <- array(dim = c(Ns, 2, nrow(X)))
+dx[1,,] <- t(X)
+dx[2,,] <- t(Y)
+dx[3,,] <- t(Z)
+
+data <- list(Ns = Ns, P = 2, N = nrow(X), X = dx)
+
+
+fit <- stan(file = "pgparray.stan", data = data, 
             iter = 1000, chains = 1)
-
-# opt <- optimizing(get_stanmodel(fit), data = data)
-# t_opt <- opt$par[grep("t", names(opt$par))]
-# plot(t_gt, t_opt)
 
 plot(fit, pars = "t")
 plot(fit, pars = "lambda")
@@ -49,15 +60,14 @@ tmcmc <- mcmc(pst$t)
 post_mean <- posterior.mode(tmcmc)
 plot(t_gt, post_mean)
 
-lXmcmc <- mcmc(extract(fit, "lambdaX")$lambdaX)
-lYmcmc <- mcmc(extract(fit, "lambdaY")$lambdaY)
+lmcmc <- lapply(1:Ns, function(i) mcmc(extract(fit, "lambda")$lambda[,i,]))
+lmap <- lapply(lmcmc, posterior.mode)
 
-sXmcmc <- mcmc(extract(fit, "sigmaX")$sigmaX)
-sYmcmc <- mcmc(extract(fit, "sigmaY")$sigmaY)
+smcmc <- lapply(1:Ns, function(i) mcmc(extract(fit, "sigma")$sigma[,i,]))
+smap <- lapply(smcmc, posterior.mode)
 
 
 ## plot the predictive mean
-
 
 cov_matrix <- function(t1, t2, lambda, sigma = NULL) {
   n1 <- length(t1)
@@ -75,8 +85,8 @@ cov_matrix <- function(t1, t2, lambda, sigma = NULL) {
   return ( C )
 }
 
-plot_posterior_mean <- function(X, t_gt, t, l, s, nnt = 80) {
-  t_gt <- 1 - t_gt
+plot_posterior_mean <- function(X, t_gt, t, l, s, nnt = 80, reverse = FALSE) {
+  if(reverse) t_gt <- 1 - t_gt
   nt <- runif(nnt)
   K_y <- lapply(1:2, function(i) cov_matrix(t, t, as.numeric(l[i]), as.numeric(s[i])))
   K_star <- lapply(1:2, function(i) cov_matrix(t, nt, as.numeric(l[i])))
@@ -94,14 +104,12 @@ plot_posterior_mean <- function(X, t_gt, t, l, s, nnt = 80) {
 }
 
 t <- posterior.mode(tmcmc)
-lX <- posterior.mode(lXmcmc) ; sX <- posterior.mode(sXmcmc)
-lY <- posterior.mode(lXmcmc) ; sY <- posterior.mode(sXmcmc)
+colnames(X) <- colnames(Y) <- colnames(X)  <- NULL
+xx <- list(X, Y, Z)
 
-colnames(Y) <- NULL
-le_plt <- plot_posterior_mean(X, t_gt, t, lX, sX, nnt = 200)
-pca_plt <- plot_posterior_mean(Y, t_gt, t, lY, sY, nnt = 200)
+plots <- lapply(1:Ns, function(i) plot_posterior_mean(xx[[i]], t_gt, t, lmap[[i]], smap[[i]]))
 
-joint_plot <- plot_grid(le_plt, pca_plt, ncol = 1, labels = c("Laplacian eigenmaps", "PCA"))
+joint_plot <- plot_grid(plotlist = plots, ncol = 1, labels = c("Laplacian eigenmaps", "PCA", "t-SNE"))
 cowplot::ggsave("joint.png", joint_plot, width = 4, height = 3, scale = 2)
 
 ind <- sample(nrow(tmcmc), 4)
