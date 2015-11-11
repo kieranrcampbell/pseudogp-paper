@@ -7,7 +7,12 @@ kieran.campbell@sjc.ox.ac.uk
 data {
   int<lower = 1> N;
   matrix[N, 2] X;
-  // real<lower = 0> Ga;
+  real gamma_alpha; // alpha parameter for gamma hyperprior
+  real gamma_beta; // as above, beta
+  real t_lower; // lower bound for pseudotimes
+  real t_upper; // upper bound for pseudotimes
+  real tmean; // mean on pseudotime prior
+  real tvar; // variance of pseudotime prior
 }
 
 transformed data {
@@ -24,7 +29,7 @@ transformed data {
 parameters {
   real<lower = 0> lambda[2];
   real<lower = 0> sigma[2];
-  real<lower = 0, upper = 1> t[N];
+  real<lower = t_lower, upper = t_upper> t[N];
   real<lower = 0> g;
 }
 
@@ -48,7 +53,7 @@ model {
     Sigma2[k,k] <- 1 + sigma[2] + 10e-3;
   }
 
-  g ~ gamma(30.0, 5.0);
+  g ~ gamma(gamma_alpha, gamma_beta);
 
   for(i in 1:2) {
     sigma[i] ~ inv_gamma(1.0, 1.0);
@@ -56,7 +61,7 @@ model {
   }
 
   for(i in 1:N) {
-    t[i] ~ normal(0.5, 1);
+    t[i] ~ normal(tmean, tvar);
   }
 
 

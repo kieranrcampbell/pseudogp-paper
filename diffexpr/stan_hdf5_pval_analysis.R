@@ -258,18 +258,38 @@ f <- data.frame(test = c("ss", "sw", "ss", "sw"),
                 value = c(false_pos_rate, false_pos_rate2,
                           false_neg_rate, false_neg_rate2))
 fp_plt <- ggplot(f) + geom_bar(aes(x = test, y = value, fill = type), stat = "identity")
+
+fdr <- data.frame(tp = dfc$psig == 1.0 )
+fdr$called_sig <- dfc$qval < 0.05
+tb <- table(fdr)
+false_pos_rate <- tb[3] / tb[1]
+false_neg_rate <- tb[2] / tb[4]
+
+
+fd2 <- data.frame(tp = dfs$psig == 1.0)
+fd2$called_sig <- dfs$qval < 0.05
+tb2 <- table(fd2)
+false_pos_rate2 <- tb2[3] / tb2[1]
+false_neg_rate2 <- tb2[2] / tb2[4]
+
+f <- data.frame(test = c("ss", "sw", "ss", "sw"),
+                type = c("falsepos", "falsepos", "falseneg", "falseneg"),
+                value = c(false_pos_rate, false_pos_rate2,
+                          false_neg_rate, false_neg_rate2))
+fp_plt2 <- ggplot(f) + geom_bar(aes(x = test, y = value, fill = type), stat = "identity")
   
 
 
 ## save all plots to file
-plots <- list(scatter_plt, grid_plt, all_plot, bxplt, switch_good_plt, ss_good_plt, fp_plt)
+plots <- list(scatter_plt, grid_plt, all_plot, bxplt, switch_good_plt, ss_good_plt, fp_plt, fp_plt2)
 titles <- c("Proportion of times a gene is called significant (FDR 5%)",
             " ",
             "Statistics vs MAP pseudotime estimate, smoothing top, switch bottom",
             "Statistics across genes called significant using MAP pseudotime estimate",
             "Robust genes as called by switch-like",
             "Robust genes as called by smoothing splines",
-            "Approximate false positive rate by test")
+            "Approximate false positive rate by test (95%)",
+            "Approximate false positive rate by test (100%)")
 pdf(paste0(base_dir, "GP/pseudogp2/diffexpr/stan/all_plots.pdf"), width = 10, height = 6)
 for(i in 1:length(plots)) print(plots[[i]] + ggtitle(titles[i]))
 dev.off()

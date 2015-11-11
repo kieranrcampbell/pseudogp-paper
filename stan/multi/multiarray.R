@@ -8,6 +8,7 @@ library(ggplot2)
 base_dir <- "/net/isi-scratch/kieran/"
 setwd(paste0(base_dir, "GP/pseudogp2/stan/multi"))
 source("../../diffexpr/prep_data.R")
+source("../../gputils//gputils.R")
 
 
 h5file <- paste0(base_dir, "GP/pseudogp2/data/5m_run_with_tau_traces.h5")
@@ -66,42 +67,38 @@ lmap <- lapply(lmcmc, posterior.mode)
 smcmc <- lapply(1:Ns, function(i) mcmc(extract(fit, "sigma")$sigma[,i,]))
 smap <- lapply(smcmc, posterior.mode)
 
+# Now individually --------------------------------------------------------
 
-## plot the predictive mean
+xl <- list(X, Y, Z)
+ifits <- lapply(xl, function(X) {
+  dx <- array(dim = c(1, 2, nrow(X)))
+  dx[1,,] <- t(X)
+  data <- list(Ns = 1, P = 2, N = nrow(X), X = dx)
+  fit <- stan(file = "pgparray.stan", data = data, 
+            iter = 1000, chains = 1)
+  return( fit )
+})
 
-cov_matrix <- function(t1, t2, lambda, sigma = NULL) {
-  n1 <- length(t1)
-  n2 <- length(t2)
-  C <- matrix(NA, nrow = n1, ncol = n2)
-  for(i in 1:n1) {
-    for(j in 1:n2) {
-      C[i, j] <- exp(-lambda * (t1[i] - t2[j])^2)
-    }
-  }  
-  if(!is.null(sigma)) {
-    stopifnot(n1 == n2)
-    C <- C + sigma * diag(n1)
-  }
-  return ( C )
-}
-
-plot_posterior_mean <- function(X, t_gt, t, l, s, nnt = 80, reverse = FALSE) {
-  if(reverse) t_gt <- 1 - t_gt
-  nt <- runif(nnt)
-  K_y <- lapply(1:2, function(i) cov_matrix(t, t, as.numeric(l[i]), as.numeric(s[i])))
-  K_star <- lapply(1:2, function(i) cov_matrix(t, nt, as.numeric(l[i])))
-  K_dstar <- lapply(1:2, function(i) cov_matrix(nt, nt, as.numeric(l[i])))
+ifit_posmean_graphs <- lapply(1:3, function(i) {
+  fit <- ifits[[i]]
+  pst <- extract(fit, "t")
   
-  mu_star <- lapply(1:2, function(i) {
-    t(K_star[[i]]) %*% solve(K_y[[i]]) %*% X[,i]
-  })
+  #tmcmc <- mcmc(pst$t)
+  tmcmc <- mcmc(pst$t)
+  t <- posterior.mode(tmcmc)
   
-  mus <- do.call(cbind, mu_star)
-  pdf <- data.frame(mus[order(nt),], nt = nt[order(nt)])
-  ggplot() + 
-    geom_point(data = data.frame(X, t_gt), aes(x = X1, y = X2, color = t_gt), size = 3, alpha = 0.5) + 
-    geom_path(data = pdf, aes(x = X1, y = X2, color = nt), size = 2, alpha = .8) + theme_bw()
-}
+  lmcmc <- mcmc(extract(fit, "lambda")$lambda[,1,])
+  lmap <- posterior.mode(lmcmc)
+  
+  smcmc <- mcmc(extract(fit, "sigma")$sigma[,1,])
+  smap <- posterior.mode(smcmc)
+
+  X <- xl[[i]]
+  plot_posterior_mean(X, t_gt, t, lmap, smap)
+})
+
+ind_plot <- cowplot::plot_grid(plotlist = ifit_posmean_graphs, ncol = 1, labels = c("Laplacian eigenmaps", "PCA", "t-SNE"))
+cowplot::ggsave("ind.png", )
 
 t <- posterior.mode(tmcmc)
 colnames(X) <- colnames(Y) <- colnames(X)  <- NULL
@@ -110,13 +107,28 @@ xx <- list(X, Y, Z)
 plots <- lapply(1:Ns, function(i) plot_posterior_mean(xx[[i]], t_gt, t, lmap[[i]], smap[[i]]))
 
 joint_plot <- plot_grid(plotlist = plots, ncol = 1, labels = c("Laplacian eigenmaps", "PCA", "t-SNE"))
-cowplot::ggsave("joint.png", joint_plot, width = 4, height = 3, scale = 2)
+cowplot::ggsave("joint.png", joint_plot, width = 4, height = 5, scale = 2)
 
-ind <- sample(nrow(tmcmc), 4)
-plts <- lapply(ind, function(i) plot_posterior_mean(tmcmc[i,], lmcmc[i,], smcmc[i,]))
-cowplot::plot_grid(plotlist = plts)
+all_plot <- plot_grid(joint_plot, ind_plot, ncol = 2, labels = c("Joint", "Individual"))
+cowplot::ggsave("comparison.png", all_plot, width = 8, height = 5, scale = 2)
+
+# ind <- sample(nrow(tmcmc), 4)
+# plts <- lapply(ind, function(i) plot_posterior_mean(tmcmc[i,], lmcmc[i,], smcmc[i,]))
+# cowplot::plot_grid(plotlist = plts)
+# 
 
 
-tracefile <- "~/mount/GP/pseudogp2/data/stan_traces.h5"
-h5createFile(tracefile)
-h5write(pst$t, tracefile, "pst")
+
+# 
+# tracefile <- "~/mount/GP/pseudogp2/data/stan_traces.h5"
+# h5createFile(tracefile)
+# h5write(pst$t, tracefile, "pst")
+
+
+post_tracefile <- "/net/isi-scratch/kieran/GP/pseudogp2/data/envelope_traces.h5"
+h5createFile(post_tracefile)
+h5write(pst$t, post_tracefile, "pst")
+h5write(as.matrix(lmcmc[[1]]), post_tracefile, "lambda")
+h5write(as.matrix(smcmc[[2]]), post_tracefile, "sigma")
+h5write(X, post_tracefile, "X")
+h5write(t_gt, post_tracefile, "t_gt")
