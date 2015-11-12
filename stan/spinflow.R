@@ -48,6 +48,24 @@ post_mean <- posterior.mode(tmcmc)
 qplot(t_gt, post_mean, size = 3, alpha = 0.8) + xlab("Principal curve fit") + 
   ylab("Posterior mode") + theme_bw()
 
+#' Plot posterior mean of model
+#+ plot-post-mean, message=FALSE, cache=TRUE
+source("../gputils//gputils.R")
+lmcmc <- mcmc(extract(fit, "lambda")$lambda)
+lmap <- posterior.mode(lmcmc)
+smcmc <- mcmc(extract(fit, "sigma")$sigma)
+smap <- posterior.mode(smcmc)
+plot_posterior_mean(X, t_gt, post_mean, lmap, smap)
+
+#' Save these traces as the "good" ones for other plots
+#+ write-traces, cache=TRUE, message=FALSE
+h5file <- "/net/isi-scratch/kieran/GP/pseudogp2/data/stan_traces_for_gbio.h5"
+if(!file.exists(h5file)) h5createFile(h5file)
+h5write(X, h5file, "X")
+h5write(t_gt, h5file, "t_gt")
+h5write(pst, h5file, "pst")
+h5write(as.matrix(lmcmc), h5file, "lambda")
+h5write(as.matrix(smcmc), h5file, "sigma")
 
 #' ### Maximum A-Posterior Estimates
 

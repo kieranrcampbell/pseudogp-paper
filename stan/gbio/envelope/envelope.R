@@ -4,7 +4,7 @@ library(reshape2)
 library(dplyr)
 source("../../gputils//gputils.R")
 
-post_tracefile <- "/net/isi-scratch/kieran/GP/pseudogp2/data/envelope_traces.h5"
+post_tracefile <- "/net/isi-scratch/kieran/GP/pseudogp2/data/stan_traces_for_gbio.h5"
 
 pst <- h5read(post_tracefile, "pst")
 lambda <- h5read(post_tracefile, "lambda") 
@@ -43,4 +43,7 @@ plt <- plt + geom_point(data = data.frame(X, t_gt), aes(x = X1, y = X2, color = 
 
 plt
 
-ggsave(plt, filename = "2_envelope.png", width = 8, height = 5, scale = 1.5)
+ggsave(plt, filename = "2_envelope_2.png", width = 8, height = 5, scale = 1.5)
+  
+
+
