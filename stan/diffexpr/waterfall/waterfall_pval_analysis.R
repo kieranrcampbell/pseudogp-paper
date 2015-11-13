@@ -306,7 +306,6 @@ sce@lowerDetectionLimit <- 0.1
 ## end
 
 ## Standardize to same number of genes used ##
-sce@lowerDetectionLimit <- 0.1
 n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
 genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
 sce <- sce[genes_to_use,]

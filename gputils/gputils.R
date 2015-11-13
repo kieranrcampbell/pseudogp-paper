@@ -34,7 +34,7 @@ posterior_mean_curve <- function(X, t, l, s, nnt = 80, reverse = FALSE) {
 plot_posterior_mean <- function(X, t_gt, t, l, s, nnt = 80, reverse = FALSE,
                                 curve_color = NULL) {
   colnames(X) <- NULL
-  pmc <- posterior_mean_curve(X, t_gt, t, l, s, nnt, reverse)
+  pmc <- posterior_mean_curve(X, t, l, s, nnt, reverse)
   mus <- pmc$mu ; nt <- pmc$t
   pdf <- data.frame(mus[order(nt),], nt = nt[order(nt)])
   plt <- ggplot() + 
