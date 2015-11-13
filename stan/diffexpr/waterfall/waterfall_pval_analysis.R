@@ -51,7 +51,7 @@ pvalsFromHDF5 <- function(h5file) {
 }
 
 
-generatePlots <- function(SL, sce, pst, outputfile, save_individual = FALSE) {
+generatePlots <- function(SL, sce, pst, outputfile, fdrfile, save_individual = FALSE) {
   #' @param SL List returned by pvalsFromHDF5
   #' @param save_individual Save individual plots as you go?
 
@@ -175,11 +175,12 @@ generatePlots <- function(SL, sce, pst, outputfile, save_individual = FALSE) {
   
   ## repeat the same for switch-like
   switch_pvals <- testDE(sce)[1,]
+  sw_qvals <- p.adjust(switch_pvals, method = "BH")
   
   stopifnot(all(switch_pvals >= 0))
   
   switch_qvals <- p.adjust(switch_pvals, method = "BH")
-  dfs <- data.frame(psig = SL$sw_prop_sig, qval = SL$sw_qvals, med_q_val = SL$sw_med_q)
+  dfs <- data.frame(psig = SL$sw_prop_sig, qval = sw_qvals, med_q_val = SL$sw_med_q)
   dfs <- mutate(dfs, is_sig = qval < 0.05)
   
   plt_sw_prop <- ggplot(dfs) + geom_point(aes(x = psig, y = qval, colour = is_sig), size = 2, alpha = 0.5) +
@@ -236,6 +237,7 @@ generatePlots <- function(SL, sce, pst, outputfile, save_individual = FALSE) {
                   type = c("falsepos", "falsepos", "falseneg", "falseneg"),
                   value = c(false_pos_rate, false_pos_rate2,
                             false_neg_rate, false_neg_rate2))
+  readr::write_csv(f, fdrfile)
   fp_plt <- ggplot(f) + geom_bar(aes(x = test, y = value, fill = type), stat = "identity")
   
   fdr <- data.frame(tp = dfc$psig == 1.0 )
@@ -285,14 +287,35 @@ if(length(grep("darwin", system)) > 0) {
   base_dir <- "/net/isi-scratch/kieran/"
 }
 
+print(paste("Using base_dir", base_dir))
+
 devtools::load_all(paste0(base_dir, "switch/sctools"))
 
-outputfile <- paste0(base_dir, "GP/pseudogp2/diffexpr/stan/all_plots.pdf")
+## Edit 'waterfall' here ------
+outputfile <- paste0(base_dir, "GP/pseudogp2/stan/diffexpr/waterfall/all_plots.pdf")
+h5file <- paste0(base_dir, "GP/pseudogp2/data/waterfall_diffexpr.h5")
+pstfile <- paste0(base_dir, "GP/pseudogp2/data/waterfall_stan_traces.h5")
+scefile <- paste0(base_dir, "datasets/waterfall/waterfall.Rdata")
+fdrfile <- paste0(base_dir, "GP/pseudogp2/stan/diffexpr/waterfall_fdr.txt")
 
-h5file <- ""
+load(scefile)
+
+##------- Waterfall ONLY
+exprs(sce) <- log2(exprs(sce) + 1)
+sce@lowerDetectionLimit <- 0.1
+## end
+
+## Standardize to same number of genes used ##
+sce@lowerDetectionLimit <- 0.1
+n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
+genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
+sce <- sce[genes_to_use,]
+
 sigList <- pvalsFromHDF5(h5file)
 
+pst <- h5read(pstfile, "pst")
+
 ## need sce & pst
-generatePlots(sigList, sce, pst, outputfile)
+generatePlots(sigList, sce, pst, outputfile, fdrfile)
 
 

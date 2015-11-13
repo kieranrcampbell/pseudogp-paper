@@ -51,7 +51,7 @@ pvalsFromHDF5 <- function(h5file) {
 }
 
 
-generatePlots <- function(SL, sce, pst, outputfile, save_individual = FALSE) {
+generatePlots <- function(SL, sce, pst, outputfile, fdrfile, save_individual = FALSE) {
   #' @param SL List returned by pvalsFromHDF5
   #' @param save_individual Save individual plots as you go?
 
@@ -237,6 +237,7 @@ generatePlots <- function(SL, sce, pst, outputfile, save_individual = FALSE) {
                   type = c("falsepos", "falsepos", "falseneg", "falseneg"),
                   value = c(false_pos_rate, false_pos_rate2,
                             false_neg_rate, false_neg_rate2))
+  readr::write_csv(f, fdrfile)
   fp_plt <- ggplot(f) + geom_bar(aes(x = test, y = value, fill = type), stat = "identity")
   
   fdr <- data.frame(tp = dfc$psig == 1.0 )
@@ -257,6 +258,7 @@ generatePlots <- function(SL, sce, pst, outputfile, save_individual = FALSE) {
                   value = c(false_pos_rate, false_pos_rate2,
                             false_neg_rate, false_neg_rate2))
   fp_plt2 <- ggplot(f) + geom_bar(aes(x = test, y = value, fill = type), stat = "identity")
+  
     
   ## save all plots to file
   plots <- list(scatter_plt, grid_plt, all_plot, bxplt, switch_good_plt, ss_good_plt, fp_plt, fp_plt2)
@@ -295,6 +297,8 @@ outputfile <- paste0(base_dir, "GP/pseudogp2/stan/diffexpr/ear/all_plots.pdf")
 h5file <- paste0(base_dir, "GP/pseudogp2/data/ear_diffexpr.h5")
 pstfile <- paste0(base_dir, "GP/pseudogp2/data/ear_stan_traces.h5")
 scefile <- paste0(base_dir, "datasets/ear/sce_pst.Rdata")
+fdrfile <- paste0(base_dir, "GP/pseudogp2/stan/diffexpr/ear_fdr.txt")
+
 
 load(scefile)
 
@@ -316,6 +320,6 @@ sigList <- pvalsFromHDF5(h5file)
 pst <- h5read(pstfile, "pst")
 
 ## need sce & pst
-generatePlots(sigList, sce, pst, outputfile)
+generatePlots(sigList, sce, pst, outputfile, fdrfile)
 
 

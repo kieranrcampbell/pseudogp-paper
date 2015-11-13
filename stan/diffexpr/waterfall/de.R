@@ -69,7 +69,7 @@ h5outputfile <- paste0(rdir, "GP/pseudogp2/data/waterfall_diffexpr.h5")
 load(scefile) ## loads in sce
 pst <- h5read(tracefile, "pst")
 
-##------- NOSE ONLY
+##------- Waterfall ONLY
 exprs(sce) <- log2(exprs(sce) + 1)
 sce@lowerDetectionLimit <- 0.1
 ## end
