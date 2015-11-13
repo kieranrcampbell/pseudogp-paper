@@ -9,7 +9,7 @@ set.seed(123)
 
 setwd("/net/isi-scratch/kieran/GP/pseudogp2/")
 source("gputils//gputils.R")
-h5file = "data/nose_embeddings.h5"
+h5file = "data/waterfall_embeddings.h5"
 X <- h5read(h5file, "X")
 X <- apply(X, 2, function(x) (x - mean(x)) / sd(x))
 wpst <- h5read(h5file, "wpst")
@@ -17,7 +17,7 @@ wpst <- h5read(h5file, "wpst")
 
 data <- list(X = X, N = nrow(X))
 
-fit <- stan(file = "stan/nose/pseudogp_nose.stan", data = data, 
+fit <- stan(file = "stan/waterfall/pseudogp_waterfall.stan", data = data, 
             iter = 1000, chains = 1)
 
 plot(fit, pars = "t")
@@ -38,7 +38,7 @@ lmap <- posterior.mode(lmcmc)
 
 plot_posterior_mean(X, wpst, post_mean, lmap, smap)
 
-h5file <- "/net/isi-scratch/kieran/GP/pseudogp2/data/nose_stan_traces.h5"
+h5file <- "/net/isi-scratch/kieran/GP/pseudogp2/data/waterfall_stan_traces.h5"
 if(!file.exists(h5file)) h5createFile(h5file)
 
 h5write(X, h5file, "X")

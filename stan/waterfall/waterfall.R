@@ -3,7 +3,7 @@ library(readxl)
 library(scater)
 library(embeddr)
 
-setwd("/net/isi-scratch/kieran/datasets/nose")
+setwd("/net/isi-scratch/kieran/datasets/waterfall")
 fname <- dir()[grep("mmc7", dir())]
 
 x <- read_excel(fname)

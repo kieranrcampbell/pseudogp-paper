@@ -17,8 +17,7 @@ cov_matrix <- function(t1, t2, lambda, sigma = NULL) {
   return ( C )
 }
 
-posterior_mean_curve <- function(X, t_gt, t, l, s, nnt = 80, reverse = FALSE) {
-  if(reverse) t_gt <- 1 - t_gt
+posterior_mean_curve <- function(X, t, l, s, nnt = 80, reverse = FALSE) {
   nt <- runif(nnt)
   K_y <- lapply(1:2, function(i) cov_matrix(t, t, as.numeric(l[i]), as.numeric(s[i])))
   K_star <- lapply(1:2, function(i) cov_matrix(t, nt, as.numeric(l[i])))

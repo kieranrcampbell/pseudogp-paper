@@ -60,9 +60,9 @@ if(!require(rhdf5)) stop("Need some hdf5 love")
 
 
 ##--------------- Edit here
-tracefile <- paste0(rdir, "GP/pseudogp2/data/nose_stan_traces.h5")
-scefile <- paste0(rdir, "datasets/nose/nose.Rdata")
-h5outputfile <- paste0(rdir, "GP/pseudogp2/data/nose_diffexpr.h5")
+tracefile <- paste0(rdir, "GP/pseudogp2/data/waterfall_stan_traces.h5")
+scefile <- paste0(rdir, "datasets/waterfall/waterfall.Rdata")
+h5outputfile <- paste0(rdir, "GP/pseudogp2/data/waterfall_diffexpr.h5")
 ##--------------- End edit
 
 
