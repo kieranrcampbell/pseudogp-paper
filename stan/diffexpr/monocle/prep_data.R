@@ -15,16 +15,7 @@ load_data <- function(rdir = "/net/isi-scratch/kieran/") {
     to_keep <- h5read(h5file, "to_keep")
     pseudotimes <- h5read(h5file, "tchain")
     cluster <- h5read(h5file, "embeddr_cluster")
-  } else {
-    pseudotime_file <- paste0(rdir, "GP/gpseudotime/data/decsv/pseudotimes.csv")
-    to_keep_file <- paste0(rdir, "GP/gpseudotime/data/decsv/to_keep.csv")
-    cluster_file <- paste0(rdir, "GP/gpseudotime/data/decsv/cluster.csv")
-    
-    pseudotimes <- as.matrix(read_csv(pseudotime_file))
-    to_keep <- read_csv(to_keep_file)$to_keep
-    cluster  <- read_csv(cluster_file)$cluster
-  }
-  
+  } 
   # Load gene expression data ---------
   sce <- NULL
   hsmm_data_available <- data(package='HSMMSingleCell')$results[,3]
@@ -58,8 +49,6 @@ load_data <- function(rdir = "/net/isi-scratch/kieran/") {
   # qplot(fData(sce)$n_cells_exprs)
   genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
   sce <- sce[genes_to_use,]
-  
-  # Time for some differential expression ------
-  pst <- pseudotimes[500:nrow(pseudotimes),]
-  return( list(sce = sce, pst = pst) )
+
+  return( sce )
 }
