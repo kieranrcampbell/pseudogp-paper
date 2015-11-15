@@ -1,13 +1,4 @@
 
-#' ## Supplementary analysis for pseudogp
-#' 
-#' In this document we compare some odds and ends for the pseudogp paper, including:
-#' * Effect of unconstrained prior
-#' * Effect of prior variance in unconstrained case
-#' * Maximum likelihood estimate
-
-#' First - setup:
-
 #+ setup, cache=TRUE, message = FALSE
 library(rstan)
 library(rhdf5)

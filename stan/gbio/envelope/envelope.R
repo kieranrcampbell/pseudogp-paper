@@ -46,7 +46,7 @@ makeEnvelopePlot <- function(post_tracefile) {
 #base_dir <- "/net/isi-scratch/kieran/GP/pseudogp2/data/"
 base_dir <- "~/mount/GP/pseudogp2/data/"
 post_tracefiles <- paste0(base_dir,
-                    c("stan_traces_for_gbio.h5", "ear_stan_traces.h5", "nose_stan_traces.h5"))
+                    c("stan_traces_for_gbio.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
 
 plts <- lapply(post_tracefiles, makeEnvelopePlot)
 pg <- cowplot::plot_grid(plotlist = plts, nrow = 1, labels = c("A", "B", "C"))
