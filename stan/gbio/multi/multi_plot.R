@@ -42,7 +42,9 @@ makeEnvelopePlot <- function(pst, lambda, sigma, X, ncurves = 80) {
   return( plt )
 }
 
-base_dir <- "~/mount/"
+#base_dir <- "~/mount/"
+base_dir <- "/net/isi-scratch/kieran/"
+source(paste0(base_dir, "GP/pseudogp2/gputils/gputils.R"))
 h5file <- paste0(base_dir, "GP/pseudogp2/data/monocle_multi_traces.h5")
 h5ls(h5file)
 
@@ -75,3 +77,7 @@ sigmai <- extractData("sigma")
 
 indv_plots <- lapply(1:3, function(i) makeEnvelopePlot(psti[[i]], lambdai[[i]], sigmai[[i]], XXi[[i]]))
 pgi <- cowplot::plot_grid(plotlist = indv_plots, nrow = 1, labels = c("Laplacian eigenmaps", "PCA", "t-SNE"))
+
+ggsave("multi.png", pg, width = 8, height = 2.8, scale = 1.5)
+ggsave("indv.png", pgi, width = 8, height = 2.8, scale = 1.5)
+
