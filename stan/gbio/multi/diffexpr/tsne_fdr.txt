@@ -1,0 +1,5 @@
+"test","type","value"
+"ss","falsepos",0.167755
+"sw","falsepos",0.104825
+"ss","falseneg",0
+"sw","falseneg",0

@@ -67,6 +67,7 @@ fe_plt <- ggplot(dfc) + geom_point(aes(x = psig, y = qval, color = class), alpha
   geom_hline(yintercept = 0.05, linetype = 2, alpha = 0.5) +
   theme(legend.position = c(0.7,0.7))
 
+ggsave("fe.png", fe_plt, width = 5, height = 3, scale = 1.5)
 
 
 

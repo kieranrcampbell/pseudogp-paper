@@ -182,6 +182,9 @@ generatePlots <- function(SL, sce, pst, outputfile, fdrfile, save_individual = F
   dfs <- data.frame(psig = SL$sw_prop_sig, qval = sw_qvals, med_q_val = SL$sw_med_q)
   dfs <- mutate(dfs, is_sig = qval < 0.05)
   
+  rownames(dfs) <- featureNames(sce)
+  readr::write_csv(dfs, "dfs.csv")
+  
   plt_sw_prop <- ggplot(dfs) + geom_point(aes(x = psig, y = qval, colour = is_sig), size = 2, alpha = 0.5) +
     ggthemes::scale_colour_economist() + 
     geom_hline(yintercept = 0.05, linetype = 1, colour = 'darkred') + 
