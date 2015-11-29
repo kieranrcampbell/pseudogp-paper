@@ -20,7 +20,7 @@ init <- list(list(t = runif(length(t_gt), 0.49, 0.51),
              lambda = c(1,1),
              sigma = c(1,1)))
 
-fit <- stan(file = "pseudogp.stan", data = data, 
+fit <- stan(file = "monocle/pseudogp.stan", data = data,
             iter = 1000, chains = 1)
 
 # opt <- optimizing(get_stanmodel(fit), data = data)
@@ -56,7 +56,7 @@ cov_matrix <- function(t1, t2, lambda, sigma = NULL) {
     for(j in 1:n2) {
       C[i, j] <- exp(-lambda * (t1[i] - t2[j])^2)
     }
-  }  
+  }
   if(!is.null(sigma)) {
     stopifnot(n1 == n2)
     C <- C + sigma * diag(n1)
@@ -69,15 +69,15 @@ plot_posterior_mean <- function(t, l, s, nnt = 80) {
   K_y <- lapply(1:2, function(i) cov_matrix(t, t, as.numeric(l[i]), as.numeric(s[i])))
   K_star <- lapply(1:2, function(i) cov_matrix(t, nt, as.numeric(l[i])))
   K_dstar <- lapply(1:2, function(i) cov_matrix(nt, nt, as.numeric(l[i])))
-  
+
   mu_star <- lapply(1:2, function(i) {
     t(K_star[[i]]) %*% solve(K_y[[i]]) %*% X[,i]
   })
-  
+
   mus <- do.call(cbind, mu_star)
   pdf <- data.frame(mus[order(nt),], nt = nt[order(nt)])
-  ggplot() + 
-    geom_point(data = data.frame(X, t_gt), aes(x = X1, y = X2, color = t_gt), size = 3, alpha = 0.5) + 
+  ggplot() +
+    geom_point(data = data.frame(X, t_gt), aes(x = X1, y = X2, color = t_gt), size = 3, alpha = 0.5) +
     geom_path(data = pdf, aes(x = X1, y = X2, color = nt), size = 2, alpha = .8) + theme_bw() +
     geom_rug(data = data.frame(X, t_gt), aes(x = X1, y = X2))
 }

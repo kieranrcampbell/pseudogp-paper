@@ -15,3 +15,4 @@ ggplot(x) + geom_point(aes(x = psig, y = qval))
 
 bad_genes <- filter(x, psig < 0.1, qval < 0.1)
 bad_genes_sort <- arrange(bad_genes, qval)
+
