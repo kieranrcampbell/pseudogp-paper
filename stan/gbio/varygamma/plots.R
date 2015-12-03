@@ -76,4 +76,11 @@ afdr_plt <- ggplot(fdr) + geom_bar(aes(x = GammaAlphaBeta, y = FDR), stat = "ide
   theme(legend.position = "none") + coord_flip() +
   ylab("Approximate false discovery rate")
 
+pdf("gamma_fdr.pdf", width = 10, height = 6)
+print(pg)
+print(afdr_plt)
+dev.off()
+
+
+
 
