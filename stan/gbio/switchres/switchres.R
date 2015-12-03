@@ -155,3 +155,8 @@ madplt <- ggplot(data.frame(tmad)) + geom_density(aes(x = tmad), fill = 'darkred
   xlab("Median absolute deviation of activation time") + ylab("Density")
 
 ggsave("5c_switchres.png", madplt, width=3, height=2.5, scale = 1.6)
+
+
+# pull out some genes for quick geo ---------------------------------------
+
+d <- filter(de_filter, abs_med_act > 10)
