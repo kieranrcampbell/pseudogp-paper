@@ -29,9 +29,12 @@ library(ggplot2)
 library(ggthemes)
 library(rhdf5)
 library(scater) ## to hold single-cell data
-
 library(embeddr)
 library(cowplot)
+library(readr)
+
+base_dir <- "~/mount"
+setwd(file.path(base_dir, "GP/pseudogp2/R_notebooks"))
 ```
 
 
@@ -84,6 +87,8 @@ ak <- coef(fit_loglin)
 f <- function(x) ak[1] * 10^(-ak[2] * x) 
 genes_for_embedding <- (CV2 > 4 * predict(fit_loglin))
 df_fit$for_embedding <- as.factor(genes_for_embedding)
+df_fit$gene_names <- names(genes_for_embedding)
+write_csv(df_fit, "df_fit.csv")
 ggplot(df_fit, aes(x=m, y=CV2, color = for_embedding)) + geom_point() +
   theme_bw() + xlab('Mean') + ylab('CV2') + scale_color_fivethirtyeight() +
   stat_function(fun=f, color='black')
@@ -135,10 +140,10 @@ plot_embedding(sce_23)
 ```
 
 ```{r save-embeddings, cache=TRUE, warning=FALSE, message=FALSE}
-h5file <- "/net/isi-scratch/kieran/GP/gpseudotime/data/embeddings.h5"
+h5file <- file.path(base_dir, "/GP/pseudogp2/data/embeddings.h5")
 h5createFile(h5file)
 h5createGroup(h5file, "monocle")
-h5write(redDim(sce_23), h5file, "monocle/embedding")
+h5write(redDim(sce_23), h5file, "monocle/X")
 h5write(pseudotime(sce_23), h5file, "monocle/pseudotime")
 h5write(sce_23$proj_dist, h5file, "monocle/hdnoise")
 ```

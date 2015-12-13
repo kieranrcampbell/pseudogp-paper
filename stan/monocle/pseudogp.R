@@ -6,9 +6,9 @@ library(ggplot2)
 
 
 base_dir <- "/net/isi-scratch/kieran/"
-setwd(paste0(base_dir, "GP/pseudogp2/stan"))
+setwd(file.path(base_dir, "GP/pseudogp2/stan"))
 
-h5file <- paste0(base_dir, "GP/pseudogp2/data/5m_run_with_tau_traces.h5")
+h5file <- file.path(base_dir, "GP/pseudogp2/data/5m_run_with_tau_traces.h5")
 #h5file = "~/mount/GP/pseudogp2/data/ear_embeddings.h5"
 X <- h5read(h5file, "X")
 X <- apply(X, 2, function(x) (x - mean(x)) / sd(x))
@@ -16,9 +16,12 @@ t_gt <- h5read(h5file, "t_gt")
 
 data <- list(X = X, N = nrow(X))
 
-init <- list(list(t = runif(length(t_gt), 0.49, 0.51),
+xpca <- prcomp(X)$x[,1]
+t0 <- (xpca - min(xpca)) / (max(xpca) - min(xpca))
+
+init <- list(list(t = t0),
              lambda = c(1,1),
-             sigma = c(1,1)))
+             sigma = c(1,1))
 
 fit <- stan(file = "monocle/pseudogp.stan", data = data,
             iter = 1000, chains = 1)
