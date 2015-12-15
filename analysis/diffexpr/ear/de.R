@@ -5,40 +5,12 @@
 library(devtools)
 library(scater)
 library(embeddr)
+library(switchde)
+library(rhdf5)
 
-doDiffExprAnalysis <- function(sce, pst, start, end, h5outputfile) {
-  ## subset to genes expressed in at lesat 10% of cells
-  n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
-  genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
-  sce <- sce[genes_to_use,]
-  
-  # What range of pst are we looking at?
-  pst <- pst[start:end,] 
-  
-  ngenes <- nrow(sce) # number of genes
-  n_pst <- nrow(pst) # number of pseudotime samples
-  
-  ss_pvals <- switch_pvals <- matrix(NA, nrow = ngenes, ncol = n_pst)
+base_dir <- "/net/isi-scratch/kieran/"
+source(file.path(base_dir, "pseudogp-paper/analysis/diffexpr/common.R"))
 
-  for(i in 1:n_pst) {
-    sce$pseudotime <- t_i <- pst[i,]
-    
-    ss_test <- pseudotime_test(sce, n_cores = 1)
-    ss_pvals[,i] <- ss_test$p_val
-    
-    # switch model
-    switch_pv <- testDE(sce)
-    switch_pvals[,i] <- switch_pv[1,]
-  }
-
-  ## write results
-  if(!file.exists(h5outputfile)) h5createFile(h5outputfile)
-  h5createGroup(h5outputfile, "ss")
-  h5createGroup(h5outputfile, "switch")
-  h5write(ss_pvals, h5outputfile, paste0("ss/", as.character(start), "_", as.character(end)))
-  h5write(switch_pvals, h5outputfile, paste0("switch/", as.character(start), "_", as.character(end)))
-  print("[de.R] Done")
-}
 
 start <- NULL
 end <- NULL
@@ -51,18 +23,13 @@ if(length(args) > 0) {
 } else {
   stop("Provide start and end samples")
 }
-rdir <- "/net/isi-scratch/kieran/"
-load_all(paste0(rdir, "switch/sctools/"))
-
-# Load pseudotime assignments ------
-if(!require(rhdf5)) stop("Need some hdf5 love")
 
 
 
 ##--------------- Edit here
-tracefile <- paste0(rdir, "GP/pseudogp2/data/ear_stan_traces.h5")
-scefile <- paste0(rdir, "datasets/ear/sce_pst.Rdata")
-h5outputfile <- paste0(rdir, "GP/pseudogp2/data/ear_diffexpr.h5")
+tracefile <- paste0(base_dir, "pseudogp-paper/data/ear_stan_traces.h5")
+scefile <- paste0(base_dir, "pseudogp-paper/data/sce_ear.Rdata")
+h5outputfile <- paste0(base_dir, "pseudogp-paper/data/ear_diffexpr.h5")
 ##--------------- End edit
 
 
@@ -72,8 +39,6 @@ pst <- h5read(tracefile, "pst")
 
 ##------- EAR ONLY
 sce@lowerDetectionLimit <- 0.1
-to_keep <- h5read(tracefile, "to_keep")
-sce <- sce[,to_keep]
 ## end
 
 
@@ -81,8 +46,6 @@ sce <- sce[,to_keep]
 stopifnot(start > 0 && end > 0 && start < nrow(pst) && end < nrow(pst) && start < end)
 
 doDiffExprAnalysis(sce, pst, start, end, h5outputfile)
-
-
 
 
 
