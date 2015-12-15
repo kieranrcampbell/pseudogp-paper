@@ -11,7 +11,8 @@ library(matrixStats)
 
 base_dir <- "/net/isi-scratch/kieran/"
 
-setwd(paste0(base_dir, "GP/pseudogp2/stan/gbio//postuncert"))
+
+setwd(file.path(base_dir, "GP/pseudogp2/stan/gbio//postuncert"))
 source("../../../gputils//gputils.R")
 
 post_tracefile <- "/net/isi-scratch/kieran/GP/pseudogp2/data/stan_traces_for_gbio.h5"
@@ -39,29 +40,37 @@ plt <- ggplot(dm) + geom_density(aes(x = value, fill = variable)) +
 
 ggsave(plt, filename = "pu_density.png", width = 8, height = 2, scale = 1.5)
 
+makeBoxplot <- function(pst) {
+  tmcmc <- mcmc(pst)
+  hpd75 <- HPDinterval(tmcmc, 0.75)
+  hpd95 <- HPDinterval(tmcmc, 0.95)
+  
+  p <- cbind(hpd75, hpd95)
+  p <- data.frame(p)
+  names(p) <- c("lower75", "upper75", "lower95", "upper95")
+  p$Median <- colMedians(pst)
+  p$Cell <- as.factor(rank(p$Median))
+  
+  
+  plt <- ggplot(p) + geom_boxplot(aes(x = Cell, middle = Median, lower = lower75, upper = upper75,
+                               ymin = lower95, ymax = upper95), stat = "identity", fill = "darkred", alpha = 0.5) +
+      cowplot::theme_cowplot() +
+      theme(axis.ticks = element_blank(), axis.text.x = element_blank(), axis.title.x = element_blank()) +
+       ylab("Pseudotime") # + xlab("Cell") 
+  return(plt)
+}
 
-tmcmc <- mcmc(pst)
-hpd75 <- HPDinterval(tmcmc, 0.75)
-hpd95 <- HPDinterval(tmcmc, 0.95)
+#ggsave("1b_post_uncert.png", plt, width = 4, height = 2.5, scale = 2.3)
 
-p <- cbind(hpd75, hpd95)
-p <- data.frame(p)
-names(p) <- c("lower75", "upper75", "lower95", "upper95")
-p$Median <- colMedians(pst)
-p$Cell <- as.factor(rank(p$Median))
-# pm <- reshape2::melt(p, id.vars = c("Cell", "Median"), value.name = "Pseudotime")
-# 
-# ggplot(pm) + geom_boxplot(aes(x = Cell, y = Pseudotime), outlier.shape=NA, fill = "darkred", alpha = 0.5) +
-#   cowplot::theme_cowplot() +
-#   theme(axis.ticks = element_blank(), axis.text.x = element_blank()) +
-#   xlab("Cell")
-# 
+base_dir <- "~/mount/GP/pseudogp2/data/"
+post_tracefiles <- paste0(base_dir,
+                          c("stan_traces_for_gbio.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
 
-plt <- ggplot(p) + geom_boxplot(aes(x = Cell, middle = Median, lower = lower75, upper = upper75,
-                             ymin = lower95, ymax = upper95), stat = "identity", fill = "darkred", alpha = 0.5) +
-    cowplot::theme_cowplot() +
-    theme(axis.ticks = element_blank(), axis.text.x = element_blank()) +
-    xlab("Cell") + ylab("Pseudotime")
+plts <- lapply(post_tracefiles, function(ptf) {
+  pst <- h5read(ptf, "pst")
+  makeBoxplot(pst)
+})
 
-ggsave("1b_post_uncert.png", plt, width = 4, height = 2.5, scale = 2.3)
+pg <- cowplot::plot_grid(plotlist = plts, nrow = 1, labels = c("B","C","D"), rel_widths = c(4, 3, 3))
+cowplot::ggsave(pg, filename = "3bcd_post_uncert.png", width = 8, height = 2, scale = 1.5)
 
