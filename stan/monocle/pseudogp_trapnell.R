@@ -2,46 +2,35 @@
 #' ### Kieran Campbell <kieran.campbell@sjc.ox.ac.uk>
 #' 
 #' This document goes through fitting the probabilistic curve to the Burns et al.
-#' dataset. To generate this document in markdown, run `knitr::spin("burns_pseudogp.R")` 
+#' dataset. To generate this document in markdown, run `knitr::spin("pseudogp_trapnell.R")` 
 #' from
 #' within R.
 
-
-#' Quick setup
-#' 
 #+ setup
 library(rstan)
 library(rhdf5)
 library(MCMCglmm)
 library(coda)
 library(ggplot2)
-library(moments)
-library(devtools)
 
 devtools::load_all("~/oxford/pseudogp") # TODO - install and replace with `library(pseudogp)`
 set.seed(123)
+
 
 #' Now read in the data
 #' 
 #+ data-read
 base_dir <- "~/mount"
 
-h5file <- file.path(base_dir, "GP/pseudogp2/data/ear_embeddings.h5")
-output_hdf5 <- file.path(base_dir, "GP/pseudogp2/data/ear_stan_traces.h5")
+h5file <- file.path(base_dir, "GP/pseudogp2/data/trapnell_embeddings.h5")
+output_hdf5 <- file.path(base_dir, "GP/pseudogp2/data/monocle_stan_traces.h5")
 
 X <- h5read(h5file, "Xle")
-X <- apply(X, 2, function(x) (x - mean(x)) / sd(x))
 t_gt <- h5read(h5file, "t_gt")
 
-#' and quickly plot to make sure it looks right
-#+ quick-plot, fig.width=5, fig.height = 5
-ggplot(data.frame(X, t_gt)) + 
-  geom_point(aes(x = X1, y = X2, color = t_gt)) + theme_bw()
-
-#' ### Fit the pseudotime
-#+ pseudo-fit
-fit <- fitPseudotime(X, initialise_from = "principal_curve", 
-                     smoothing_alpha = 9, smoothing_beta = 1, seed = 123)
+#' Now fit the probabilistic pseudotime:
+#+ fit-pseudotime, message = FALSE
+fit <- fitPseudotime(X, smoothing_alpha = 30, smoothing_beta = 5, seed = 123)
 
 #' Plot posterior mean curves
 #+ posteriorcplt, fig.width=6, fig.height=5
@@ -67,6 +56,3 @@ h5write(X, output_hdf5, "X")
 h5write(pst$t, output_hdf5, "pst")
 h5write(as.matrix(smcmc), output_hdf5, "sigma")
 h5write(as.matrix(lmcmc), output_hdf5, "lambda")
-
-
-

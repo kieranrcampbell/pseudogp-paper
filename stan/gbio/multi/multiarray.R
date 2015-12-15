@@ -5,6 +5,14 @@ library(coda)
 library(ggplot2)
 library(scater)
 
+
+# README---- --------------------------------------------------------------
+#' KC 15/12/2015 
+#' 
+#' This should be largely obsolete. Embeddings done in monocle/trajectory_discovery.R
+#' and the rest should be re-written as an Rmarkdown doc using library(pseudogp)
+
+
 #' Generates traces for multiple datasources (t-SNE, LE, PCA)
 #' as well as single and saves to hdf5
 

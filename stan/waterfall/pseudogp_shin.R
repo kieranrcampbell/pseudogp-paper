@@ -17,7 +17,7 @@ base_dir <- "~/mount/"
 h5file <- file.path(base_dir, "GP/pseudogp2/data/waterfall_embeddings.h5")
 output_hdf5 <- file.path("/GP/pseudogp2/data/waterfall_stan_traces.h5")
 
-load_all("~/oxford/pseudogp") # TODO: change to library(pseudogp)
+devtools::load_all("~/oxford/pseudogp") # TODO: change to library(pseudogp)
 set.seed(123)
 
 
