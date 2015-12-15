@@ -9,6 +9,9 @@
 #' reading in the data and attempting to find a trajectory, with some discussion of why
 #' clustering may be more appropriate.
 #' 
+#' To turn this into markdown, run `knitr::spin("trajectory_discovery_burns.R")` from
+#' within R.
+#' 
 #' ## Obtaining the data
 #+ setup
 library(matrixStats)
