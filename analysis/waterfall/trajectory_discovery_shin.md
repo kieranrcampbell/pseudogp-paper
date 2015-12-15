@@ -15,8 +15,8 @@ library(embeddr)
 
 base_dir <- "~/mount"
 data_dir <- file.path(base_dir, "datasets/waterfall")
-output_sce <- file.path(base_dir, "GP/pseudogp2/data/sce_waterfall.Rdata")
-h5outfile <- file.path(base_dir, "GP/pseudogp2/data/waterfall_embeddings.h5")
+output_sce <- file.path(base_dir, "pseudogp-paper/data/sce_waterfall.Rdata")
+h5outfile <- file.path(base_dir, "pseudogp-paper/data/waterfall_embeddings.h5")
 ```
 
 We need to use `read_excel` from the excellent `readxl` package to get the data:
@@ -132,11 +132,7 @@ h5createFile(h5outfile)
 ```
 
 ```
-## file '/Users/kieranc/mount/GP/pseudogp2/data/waterfall_embeddings.h5' already exists.
-```
-
-```
-## [1] FALSE
+## [1] TRUE
 ```
 
 ```r

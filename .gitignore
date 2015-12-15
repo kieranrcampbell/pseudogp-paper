@@ -1,5 +1,9 @@
 diffexpr/run_de_*
-data/*
+data/*.h5
+data/*.Rdata
+*.bak
+*.html
+*.Rmd
 *.pdf
 *.png
 \._*

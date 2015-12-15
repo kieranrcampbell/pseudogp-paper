@@ -16,10 +16,10 @@ library(moments)
 
 base_dir <- "~/mount/"
 
-h5file <- file.path(base_dir, "GP/pseudogp2/data/waterfall_embeddings.h5")
-output_hdf5 <- file.path("/GP/pseudogp2/data/waterfall_stan_traces.h5")
+h5file <- file.path(base_dir, "pseudogp-paper/data/waterfall_embeddings.h5")
+output_hdf5 <- file.path(base_dir, "pseudogp-paper/data/waterfall_stan_traces.h5")
 
-load_all("~/oxford/pseudogp") # TODO: change to library(pseudogp)
+devtools::load_all("~/oxford/pseudogp") # TODO: change to library(pseudogp)
 ```
 
 ```
@@ -66,9 +66,9 @@ fit <- fitPseudotime(X, initialise_from = "pca", smoothing_alpha = 8, smoothing_
 ## Chain 1, Iteration: 800 / 1000 [ 80%]  (Sampling)
 ## Chain 1, Iteration: 900 / 1000 [ 90%]  (Sampling)
 ## Chain 1, Iteration: 1000 / 1000 [100%]  (Sampling)
-## #  Elapsed Time: 36.5113 seconds (Warm-up)
-## #                25.9726 seconds (Sampling)
-## #                62.4839 seconds (Total)
+## #  Elapsed Time: 37.3406 seconds (Warm-up)
+## #                24.591 seconds (Sampling)
+## #                61.9316 seconds (Total)
 ```
 
 Plot the posterior mean curve
@@ -114,11 +114,17 @@ And finally save everything to HDF5
 
 
 ```r
-if(!file.exists(h5file)) h5createFile(h5file)
+h5createFile(output_hdf5)
+```
 
-h5write(X, h5file, "X")
-h5write(pst$t, h5file, "pst")
-h5write(as.matrix(smcmc), h5file, "sigma")
-h5write(as.matrix(lmcmc), h5file, "lambda")
+```
+## [1] TRUE
+```
+
+```r
+h5write(X, output_hdf5, "X")
+h5write(pst$t, output_hdf5, "pst")
+h5write(as.matrix(smcmc), output_hdf5, "sigma")
+h5write(as.matrix(lmcmc), output_hdf5, "lambda")
 ```
 

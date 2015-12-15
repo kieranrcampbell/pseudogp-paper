@@ -14,8 +14,8 @@ library(moments)
 
 base_dir <- "~/mount/"
 
-h5file <- file.path(base_dir, "GP/pseudogp2/data/waterfall_embeddings.h5")
-output_hdf5 <- file.path("/GP/pseudogp2/data/waterfall_stan_traces.h5")
+h5file <- file.path(base_dir, "pseudogp-paper/data/waterfall_embeddings.h5")
+output_hdf5 <- file.path(base_dir, "pseudogp-paper/data/waterfall_stan_traces.h5")
 
 devtools::load_all("~/oxford/pseudogp") # TODO: change to library(pseudogp)
 set.seed(123)
@@ -49,10 +49,10 @@ smcmc <- mcmc(extract(fit, "sigma")$sigma[,1,])
 lmcmc <- mcmc(extract(fit, "lambda")$lambda[,1,])
 
 #' And finally save everything to HDF5
-if(!file.exists(h5file)) h5createFile(h5file)
+h5createFile(output_hdf5)
 
-h5write(X, h5file, "X")
-h5write(pst$t, h5file, "pst")
-h5write(as.matrix(smcmc), h5file, "sigma")
-h5write(as.matrix(lmcmc), h5file, "lambda")
+h5write(X, output_hdf5, "X")
+h5write(pst$t, output_hdf5, "pst")
+h5write(as.matrix(smcmc), output_hdf5, "sigma")
+h5write(as.matrix(lmcmc), output_hdf5, "lambda")
 

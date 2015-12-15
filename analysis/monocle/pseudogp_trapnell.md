@@ -32,8 +32,8 @@ Now read in the data
 ```r
 base_dir <- "~/mount"
 
-h5file <- file.path(base_dir, "GP/pseudogp2/data/trapnell_embeddings.h5")
-output_hdf5 <- file.path(base_dir, "GP/pseudogp2/data/monocle_stan_traces.h5")
+h5file <- file.path(base_dir, "pseudogp-paper/data/trapnell_embeddings.h5")
+output_hdf5 <- file.path(base_dir, "pseudogp-paper/data/monocle_stan_traces.h5")
 
 X <- h5read(h5file, "Xle")
 t_gt <- h5read(h5file, "t_gt")
@@ -62,9 +62,9 @@ fit <- fitPseudotime(X, smoothing_alpha = 30, smoothing_beta = 5, seed = 123)
 ## Chain 1, Iteration: 800 / 1000 [ 80%]  (Sampling)
 ## Chain 1, Iteration: 900 / 1000 [ 90%]  (Sampling)
 ## Chain 1, Iteration: 1000 / 1000 [100%]  (Sampling)
-## #  Elapsed Time: 147.998 seconds (Warm-up)
-## #                76.7873 seconds (Sampling)
-## #                224.786 seconds (Total)
+## #  Elapsed Time: 147.986 seconds (Warm-up)
+## #                72.4939 seconds (Sampling)
+## #                220.48 seconds (Total)
 ```
 
 Plot posterior mean curves
@@ -105,7 +105,13 @@ lmcmc <- mcmc(extract(fit, "lambda")$lambda[,1,])
 
 ```r
 if(!file.exists(output_hdf5)) h5createFile(output_hdf5)
+```
 
+```
+## [1] TRUE
+```
+
+```r
 h5write(X, output_hdf5, "X")
 h5write(pst$t, output_hdf5, "pst")
 h5write(as.matrix(smcmc), output_hdf5, "sigma")

@@ -28,8 +28,8 @@ library(cowplot)
 #+ read-data, message = FALSE
 base_dir <- "~/mount"
 data_dir <- file.path(base_dir, "datasets/ear/")
-output_hdf5 <- file.path(base_dir, "GP/pseudogp2/data/ear_embeddings.h5")
-output_sce <- file.path(base_dir, "GP/pseudogp2/data/sce_ear.Rdata")
+output_hdf5 <- file.path(base_dir, "pseudogp-paper/data/ear_embeddings.h5")
+output_sce <- file.path(base_dir, "pseudogp-paper/data/sce_ear.Rdata")
 
 fname <- dir(data_dir)[grep("TPM_Matrix", dir(data_dir))]
 data_file <- file.path(data_dir, fname)

@@ -31,8 +31,8 @@ be easily read in using `read_delim` from the `readr` package:
 ```r
 base_dir <- "~/mount"
 data_dir <- file.path(base_dir, "datasets/ear/")
-output_hdf5 <- file.path(base_dir, "GP/pseudogp2/data/ear_embeddings.h5")
-output_sce <- file.path(base_dir, "GP/pseudogp2/data/sce_ear.Rdata")
+output_hdf5 <- file.path(base_dir, "pseudogp-paper/data/ear_embeddings.h5")
+output_sce <- file.path(base_dir, "pseudogp-paper/data/sce_ear.Rdata")
 
 fname <- dir(data_dir)[grep("TPM_Matrix", dir(data_dir))]
 data_file <- file.path(data_dir, fname)
@@ -283,11 +283,7 @@ h5createFile(output_hdf5)
 ```
 
 ```
-## file '/Users/kieranc/mount/GP/pseudogp2/data/ear_embeddings.h5' already exists.
-```
-
-```
-## [1] FALSE
+## [1] TRUE
 ```
 
 ```r

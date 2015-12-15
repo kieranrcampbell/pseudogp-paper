@@ -18,8 +18,8 @@ library(plyr)
 
 base_dir <- "~/mount"
 
-output_hdf5 <- file.path(base_dir, "/GP/pseudogp2/data/trapnell_embeddings.h5")
-output_sce <- file.path(base_dir, "GP/pseudogp2/data/sce_monocle.Rdata")
+output_hdf5 <- file.path(base_dir, "pseudogp-paper/data/trapnell_embeddings.h5")
+output_sce <- file.path(base_dir, "pseudogp-paper/data/sce_monocle.Rdata")
 ```
 
 First we create the `SCESet` using the data from the `HSMMSingleCell` package.

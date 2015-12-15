@@ -26,8 +26,8 @@ set.seed(123)
 #+ data-read
 base_dir <- "~/mount"
 
-h5file <- file.path(base_dir, "GP/pseudogp2/data/ear_embeddings.h5")
-output_hdf5 <- file.path(base_dir, "GP/pseudogp2/data/ear_stan_traces.h5")
+h5file <- file.path(base_dir, "pseudogp-paper/data/ear_embeddings.h5")
+output_hdf5 <- file.path(base_dir, "pseudogp-paper/data/ear_stan_traces.h5")
 
 X <- h5read(h5file, "Xle")
 X <- apply(X, 2, function(x) (x - mean(x)) / sd(x))

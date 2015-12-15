@@ -18,7 +18,7 @@ library(ggplot2)
 library(moments)
 library(devtools)
 
-load_all("~/oxford/pseudogp") # TODO - install and replace with `library(pseudogp)`
+devtools::load_all("~/oxford/pseudogp") # TODO - install and replace with `library(pseudogp)`
 ```
 
 ```
@@ -36,8 +36,8 @@ Now read in the data
 ```r
 base_dir <- "~/mount"
 
-h5file <- file.path(base_dir, "GP/pseudogp2/data/ear_embeddings.h5")
-output_hdf5 <- file.path(base_dir, "GP/pseudogp2/data/ear_stan_traces.h5")
+h5file <- file.path(base_dir, "pseudogp-paper/data/ear_embeddings.h5")
+output_hdf5 <- file.path(base_dir, "pseudogp-paper/data/ear_stan_traces.h5")
 
 X <- h5read(h5file, "Xle")
 X <- apply(X, 2, function(x) (x - mean(x)) / sd(x))
@@ -83,9 +83,9 @@ fit <- fitPseudotime(X, initialise_from = "principal_curve",
 ## Chain 1, Iteration: 800 / 1000 [ 80%]  (Sampling)
 ## Chain 1, Iteration: 900 / 1000 [ 90%]  (Sampling)
 ## Chain 1, Iteration: 1000 / 1000 [100%]  (Sampling)
-## #  Elapsed Time: 54.3787 seconds (Warm-up)
-## #                36.5415 seconds (Sampling)
-## #                90.9202 seconds (Total)
+## #  Elapsed Time: 56.1843 seconds (Warm-up)
+## #                39.1821 seconds (Sampling)
+## #                95.3664 seconds (Total)
 ```
 
 Plot posterior mean curves
@@ -133,7 +133,7 @@ if(!file.exists(output_hdf5)) h5createFile(output_hdf5)
 ```
 
 ```r
-h5write(Xp, output_hdf5, "X")
+h5write(X, output_hdf5, "X")
 h5write(pst$t, output_hdf5, "pst")
 h5write(as.matrix(smcmc), output_hdf5, "sigma")
 h5write(as.matrix(lmcmc), output_hdf5, "lambda")
