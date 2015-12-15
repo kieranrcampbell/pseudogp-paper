@@ -1,15 +1,20 @@
 
+# This script generates the posterior 'envelope' (uncertainty plots) (unused)
+
 library(ggplot2)
 library(reshape2)
 library(dplyr)
-source("../../../gputils//gputils.R")
+
+base_dir <- "~/mount/"
+
+source(file.path(base_dir, "pseudogp-paper/gputils//gputils.R"))
 
 makeEnvelopePlot <- function(post_tracefile) {
   pst <- h5read(post_tracefile, "pst")
   lambda <- h5read(post_tracefile, "lambda") 
   sigma <- h5read(post_tracefile, "sigma")
   X <- h5read(post_tracefile, "X")
-  #t_gt <- h5read(post_tracefile, "t_gt")
+  X <- pseudogp::standardize(X)
   
   set.seed(123)
   ns <- nrow(pst)
@@ -23,7 +28,6 @@ makeEnvelopePlot <- function(post_tracefile) {
     posterior_mean_curve(X, t, l, s, nnt = 150)
   })
   
-  #mus <- pmc$mu ; nt <- pmc$t
   mus <- lapply(pmcs, function(x) x$mu)
   M <- data.frame(do.call("rbind", mus))
   names(M) <- c("M1", "M2")
@@ -43,10 +47,8 @@ makeEnvelopePlot <- function(post_tracefile) {
   return( plt )
 }
 
-#base_dir <- "/net/isi-scratch/kieran/GP/pseudogp2/data/"
-base_dir <- "~/mount/GP/pseudogp2/data/"
-post_tracefiles <- paste0(base_dir,
-                    c("stan_traces_for_gbio.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
+post_tracefiles <- paste0(base_dir, "pseudogp-paper/",
+                    c("monocle_stan_traces.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
 
 plts <- lapply(post_tracefiles, makeEnvelopePlot)
 pg <- cowplot::plot_grid(plotlist = plts, nrow = 1, labels = c("A", "B", "C"))

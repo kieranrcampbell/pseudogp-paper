@@ -1,22 +1,12 @@
+
+# This script generates the posterior 'diffuseness plots' (2A-C)
+
 library(coda)
 library(MCMCglmm)
 library(mvtnorm)
 library(ggplot2)
 library(rhdf5)
-
-data(le_fit)
-data(monocle_le)
-
-tmcmc <- mcmc(extract(le_fit, pars = "t")$t)
-tmap <- posterior.mode(tmcmc)
-
-lmcmc <- mcmc(extract(le_fit, pars = "lambda")[[1]][,1,])
-lmap <- posterior.mode(lmcmc)
-
-smcmc <- mcmc(extract(le_fit, pars = "sigma")[[1]][,1,])
-smap <- posterior.mode(smcmc)
-
-nnt <- nrow(X)
+library(cowplot)
 
 
 makeUncertaintyPlot <- function(X, tmap, lmap, smap, nnt = 100, nx = 100, h = 2) {
@@ -50,15 +40,19 @@ makeUncertaintyPlot <- function(X, tmap, lmap, smap, nnt = 100, nx = 100, h = 2)
     xlab("Component 1") + ylab("Component 2")
 }
 
-base_dir <- "~/mount/GP/pseudogp2/data/"
-post_tracefiles <- paste0(base_dir,
-                          c("stan_traces_for_gbio.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
+base_dir <- "~/mount/"
+source(file.path(base_dir, "pseudogp-paper/gputils//gputils.R"))
+
+post_tracefiles <- paste0(base_dir, "pseudogp-paper/data/",
+                          c("monocle_stan_traces.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
 
 plts <- lapply(post_tracefiles, function(post_tracefile) {
   pst <- h5read(post_tracefile, "pst")
   lambda <- h5read(post_tracefile, "lambda") 
   sigma <- h5read(post_tracefile, "sigma")
   X <- h5read(post_tracefile, "X")
+  X <- pseudogp::standardize(X)
+  
   
   tmap <- posterior.mode(mcmc(pst))
   lmap <- posterior.mode(mcmc(lambda))
