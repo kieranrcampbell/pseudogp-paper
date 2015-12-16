@@ -1,4 +1,3 @@
-
 library(ggplot2)
 library(reshape2)
 library(dplyr)
@@ -6,20 +5,14 @@ library(RColorBrewer)
 library(grid)
 library(coda)
 library(matrixStats)
+library(pseudogp)
+library(rhdf5)
 
+base_dir <- "~/mount/"
 
-
-base_dir <- "/net/isi-scratch/kieran/"
-
-
-setwd(file.path(base_dir, "GP/pseudogp2/stan/gbio//postuncert"))
-source("../../../gputils//gputils.R")
-
-post_tracefile <- "/net/isi-scratch/kieran/GP/pseudogp2/data/stan_traces_for_gbio.h5"
+post_tracefile <- file.path(base_dir, "pseudogp-paper/data/monocle_stan_traces.h5")
 
 pst <- h5read(post_tracefile, "pst")
-
-pmean <- colMeans(pst)
 
 ind <- c(21, 121, 131, 151)
 
@@ -38,7 +31,8 @@ plt <- ggplot(dm) + geom_density(aes(x = value, fill = variable)) +
   theme(legend.key.height=unit(2, "line"), legend.key.width = unit(2, "line")) +
   cowplot::theme_cowplot()
 
-ggsave(plt, filename = "pu_density.png", width = 8, height = 2, scale = 1.5)
+ggsave(plt, filename = file.path(base_dir, "pseudogp-paper/analysis/figs/postuncert/pu_density.png"), 
+                                 width = 8, height = 2, scale = 1.5)
 
 makeBoxplot <- function(pst) {
   tmcmc <- mcmc(pst)
@@ -60,17 +54,15 @@ makeBoxplot <- function(pst) {
   return(plt)
 }
 
-#ggsave("1b_post_uncert.png", plt, width = 4, height = 2.5, scale = 2.3)
-
-base_dir <- "~/mount/GP/pseudogp2/data/"
-post_tracefiles <- paste0(base_dir,
-                          c("stan_traces_for_gbio.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
+post_tracefiles <- paste0(base_dir, "pseudogp-paper/data/",
+                          c("monocle_stan_traces.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
 
 plts <- lapply(post_tracefiles, function(ptf) {
   pst <- h5read(ptf, "pst")
   makeBoxplot(pst)
 })
 
+output_file <- file.path(base_dir, "pseudogp-paper/analysis/figs/postuncert/3bcd_post_uncert.png")
 pg <- cowplot::plot_grid(plotlist = plts, nrow = 1, labels = c("B","C","D"), rel_widths = c(4, 3, 3))
-cowplot::ggsave(pg, filename = "3bcd_post_uncert.png", width = 8, height = 2, scale = 1.5)
+cowplot::ggsave(pg, filename = output_file, width = 8, height = 2, scale = 1.5)
 
