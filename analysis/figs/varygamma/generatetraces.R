@@ -29,7 +29,7 @@ X <- h5read(h5file, "Xle")
 # t_gt <- h5read(h5file, "t_gt")
 
 # choose the gamma alpha-betas we're going to use
-gab <- data.frame(alpha = c(30, 4, 5), beta = c(5, 2, 1))
+gab <- data.frame(alpha = c(30, 3, 5), beta = c(5, 1, 1))
 gab$mean <- gab$alpha / gab$beta
 gab$var <- gab$mean / gab$beta
 
