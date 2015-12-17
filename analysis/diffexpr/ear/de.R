@@ -27,9 +27,9 @@ if(length(args) > 0) {
 
 
 ##--------------- Edit here
-tracefile <- paste0(base_dir, "pseudogp-paper/data/ear_stan_traces.h5")
-scefile <- paste0(base_dir, "pseudogp-paper/data/sce_ear.Rdata")
-h5outputfile <- paste0(base_dir, "pseudogp-paper/data/ear_diffexpr.h5")
+tracefile <- file.path(base_dir, "pseudogp-paper/data/ear_stan_traces.h5")
+scefile <- file.path(base_dir, "pseudogp-paper/data/sce_ear.Rdata")
+h5outputfile <- file.path(base_dir, "pseudogp-paper/data/ear_diffexpr.h5")
 ##--------------- End edit
 
 

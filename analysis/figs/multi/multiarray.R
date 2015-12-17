@@ -11,49 +11,30 @@ library(scater)
 #' 
 #' This should be largely obsolete. Embeddings done in monocle/trajectory_discovery.R
 #' and the rest should be re-written as an Rmarkdown doc using library(pseudogp)
+#' 
+#' Update: working on it 16/12/2015
 
-
-#' Generates traces for multiple datasources (t-SNE, LE, PCA)
-#' as well as single and saves to hdf5
-
-#base_dir <- "/net/isi-scratch/kieran/"
 base_dir <- "~/mount/"
-setwd(paste0(base_dir, "GP/pseudogp2/stan/gbio/multi"))
-source("../../diffexpr/monocle/prep_data.R")
-source("../../../gputils//gputils.R")
-
 h5outfile <- paste0(base_dir, "GP/pseudogp2/data/monocle_multi_traces.h5")
 
-h5file <- paste0(base_dir, "GP/pseudogp2/data/5m_run_with_tau_traces.h5")
+embedding_files <- paste0(base_dir, "pseudogp-paper/data/",
+                          c("trapnell_embeddings.h5", "ear_embeddings.h5", "waterfall_embeddings.h5"))
 
+# for(i in 1:3) {}
+i <- 1
+ef <- embedding_files[[i]]
+reps <- lapply(c("Xle", "Xpca", "Xtsne"), function(r) h5read(ef, r))
 
-# Laplacian eigenmaps representation --------------------------------------
-X <- h5read(h5file, "X") 
-X <- apply(X, 2, function(x) (x - mean(x)) / sd(x)) # this is the LE representation
-t_gt <- h5read(h5file, "t_gt") # principal curves rep
+smoothing <- list(monocle = c(30, 5), ear = c(9, 1), waterfall = c(8, 2))
 
-# PCA representation ------------------------------------------------------
-sce <- load_data("~/mount/")
-sce$pseudotime <- t_gt
-sce <- plotPCA(sce, colour_by = "pseudotime", return_SCESet = TRUE)
-Y <- redDim(sce)
-Y <- apply(Y, 2, function(x) (x - mean(x)) / sd(x)) # our PCA embedding
+indv_fits <- lapply(1:length(reps), function(j) {
+  fitPseudotime(reps[[j]], initialise_from = "pca", smoothing_alpha = smoothing[[i]][1], smoothing_beta = smoothing[[i]][2])
+})
 
-# T-SNE representation ----------------------------------------------------
-set.seed(1234)
-sce <- plotTSNE(sce, colour_by = "pseudotime", perplexity = 3, return_SCESet = TRUE)
-Z <- redDim(sce)
-Z <- apply(Z, 2, function(x) (x - mean(x)) / sd(x)) # our t-SNE embedding
-stopifnot(all(dim(X) == dim(Y)))
-stopifnot(all(dim(Z) == dim(X)))
+posteriorCurvePlot(reps[[3]], indv_fits[[3]])
 
-Ns <- 3
-dx <- array(dim = c(Ns, 2, nrow(X)))
-dx[1,,] <- t(X)
-dx[2,,] <- t(Y)
-dx[3,,] <- t(Z)
-
-data <- list(Ns = Ns, P = 2, N = nrow(X), X = dx)
+joint_fit <- fitPseudotime(reps, initialise_from = "pca", chains = 2,
+                           smoothing_alpha = smoothing[[i]][1], smoothing_beta = smoothing[[i]][2])
 
 if(FALSE) {
 fit <- stan(file = "pgparray.stan", data = data, 

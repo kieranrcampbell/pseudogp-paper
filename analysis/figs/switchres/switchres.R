@@ -7,9 +7,9 @@ library(switchde)
 library(coda)
 library(MCMCglmm)
 library(dplyr)
-library(GGally)
 library(matrixStats)
 library(grid)
+library(scater)
 
 
 makeSwitchPlots <- function(sce, pst) {
@@ -21,7 +21,9 @@ makeSwitchPlots <- function(sce, pst) {
   # First do differential expression test at map ----------------------------
   diff_expr <- testDE(sce)
   diff_expr <- data.frame(t(diff_expr))
-  diff_expr$gene <- fData(sce)$gene_short_name
+  diff_expr$gene <- featureNames(sce)
+  if("gene_short_name" %in% names(fData(sce))) diff_expr$gene <- fData(sce)$gene_short_name
+  fData(sce)$gene_short_name <- diff_expr$gene
   
   ## now subset down to things that are differentially expressed and have a t0 between 0 and 1
   diff_expr$qval <- p.adjust(diff_expr$pval, method = "BH")
@@ -37,20 +39,7 @@ makeSwitchPlots <- function(sce, pst) {
   
   filter_inds <- match(de_filter$gene, fData(sce)$gene_short_name)
   sce_filter <- sce[unique(filter_inds),]
-  
-  
-  to_sample <- sample(nrow(pst), 100)
-  pstpars <- apply(pst[to_sample,], 1, function(t) {
-    sce_strong$pseudotime <- t
-    fitModel(sce_strong)[3,]
-  })
-  
-  pmodes <- posterior.mode(mcmc(t(pstpars)))
-  pmad <- apply(pstpars, 1, mad)
-  # qplot(pmad, geom='density')
-  
-  
-  
+
   # switch genes with error bars for *all* filtered genes --------------------------------------------
   set.seed(123)
   ebar_sample <- sample(nrow(pst), 100)
@@ -85,8 +74,6 @@ makeSwitchPlots <- function(sce, pst) {
   de_filter <- mutate(de_filter, abs_med_act = (abs(med_act)))
   de_filter <- mutate(de_filter, mean_exprs = fData(sce_filter)$mean_exprs)
   
-  ggpairs(select(de_filter, L, abs_med_act, mean_exprs))
-  
   plots <- list()
   for(j in 1:nrow(de_small)) {
     current_gene <- inds[j]
@@ -113,25 +100,7 @@ makeSwitchPlots <- function(sce, pst) {
                               size = 3, shape=21, fill='black', color='white', alpha=0.8)
     plots[[j]] <- plt
   }
-  cplt <- cowplot::plot_grid(plotlist=plots, nrow=2, labels=de_small$gene)
-  #ggsave("5_switchres_b.png", cplt, width=6, height=2.5, scale = 2)
-  
-  
-  # genes that turn on at same time -----------------------------------------
-  
-  # dt <- dist(de_filter$t0)
-  # image(as.matrix(dt))
-  # library(gplots)
-  # heatmap.2(1 - as.matrix(dt), dendrogram="none", trace="none")
-  
-  
-  # quick volcano plot ------------------------------------------------------
-  
-  # dev <- mutate(de_filter, logqval = -log10(qval))
-  # volcano_plt <- ggplot(dev) + geom_point(aes(x = med_act, y = logqval), alpha = 0.8) +
-  #   theme_bw() + xlab("Median activation strength") + ylab("-log10 Q value")
-  # ggsave("../../supplementary/switch_volcano.png", volcano_plt, width=6, height=4.5)
-  
+
     # what’s the pseudotemporal switching resolution? -------------------------
   
   t_samples <- apply(pst[ebar_sample,], 1, function(t) {
@@ -148,28 +117,46 @@ makeSwitchPlots <- function(sce, pst) {
     xlab("Median absolute deviation of activation time") + ylab("Density")
 
   return(list(actplt, cplt, madplt))
-#ggsave("5c_switchres.png", madplt, width=3, height=2.5, scale = 1.6)
 }
 
 
 
-base_dir <- "~/mount/"
-setwd(paste0(base_dir, "GP/pseudogp2/stan/gbio/switchres"))
-source("../../diffexpr/monocle/prep_data.R")
+base_dir <- "/net/isi-scratch/kieran/"
 
-sce_monocle <- load_data(base_dir)
+load(file.path(base_dir, "pseudogp-paper/data/sce_monocle.Rdata"))
+sce_monocle <- sce_23
 
-load(file.path(base_dir, "GP/pseudogp2/stan/ear/ear.Rdata"))
+load(file.path(base_dir, "pseudogp-paper/data/sce_ear.Rdata"))
 sce_ear <- sct
 
-load(file.path(base_dir, "GP/pseudogp2/stan/waterfall/waterfall.Rdata"))
+load(file.path(base_dir, "pseudogp-paper/data/sce_waterfall.Rdata"))
 sce_waterfall <- sce
 
 sces <- list(monocle = sce_monocle, ear = sce_ear, waterfall = sce_waterfall)
 
-post_tracefiles <- paste0(base_dir, "/GP/pseudogp2/data/",
-                          c("stan_traces_for_gbio.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
+post_tracefiles <- paste0(base_dir, "pseudogp-paper/data/",
+                          c("monocle_stan_traces.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
+
 psts <- lapply(post_tracefiles, function(ptf) {
   h5read(ptf, "pst")
 })
+
+all_plts <- lapply(1:3, function(i) {
+  sce <- sces[[i]]
+  n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
+  genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
+  sce <- sce[genes_to_use,]
+  makeSwitchPlots(sce, psts[[i]])
+})
+
+ns <- c("monocle","ear","waterfall")
+setwd(file.path(base_dir, "pseudogp-paper/analysis/figs/switchres/"))
+for(i in 1:3) {
+  base_name <- paste0(ns[i], "_5_switchres")
+  plts <- all_plts[[i]]
+  ggsave(paste0(base_name, "_a.png"), actplt, width=6, height=4)
+  ggsave(paste0(base_name, "_b.png"), cplt, width=6, height=2.5, scale = 2)
+  ggsave(paste0(base_name, "_c.png"), madplt, width=3, height=2.5, scale = 1.6)
+}
+
 
