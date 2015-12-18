@@ -161,7 +161,7 @@ psts <- lapply(post_tracefiles, function(ptf) {
   h5read(ptf, "pst")
 })
 
-to_do <- 1
+to_do <- 1:3
 
 all_plts <- lapply(to_do, function(i) {
   sce <- sces[[i]]
