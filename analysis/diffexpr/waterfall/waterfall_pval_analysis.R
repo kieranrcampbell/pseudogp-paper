@@ -16,7 +16,8 @@ library(rhdf5)
 
 
 ## get the paths right
-base_dir <- "~/mount/"
+#base_dir <- "~/mount/"
+base_dir <- "/net/isi-scratch/kieran/"
 source(file.path(base_dir, "pseudogp-paper/analysis/diffexpr/common.R"))
 
 

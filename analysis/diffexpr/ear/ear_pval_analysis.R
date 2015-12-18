@@ -15,7 +15,8 @@ library(rhdf5)
 
 
 ## get the paths right
-base_dir <- "~/mount/"
+#base_dir <- "~/mount/"
+base_dir <- "/net/isi-scratch/kieran/"
 source(file.path(base_dir, "pseudogp-paper/analysis/diffexpr/common.R"))
 
 outputfile <- file.path(base_dir, "pseudogp-paper/analysis/diffexpr/ear/all_plots.pdf")
@@ -26,7 +27,7 @@ fdrfile <- file.path(base_dir, "pseudogp-paper/analysis/diffexpr/ear_fdr.txt")
 load(file.path(base_dir, "pseudogp-paper/data/sce_ear.Rdata"))
 sce <- sct
 
-
+sce@lowerDetectionLimit <- 0.1
 sigList <- pvalsFromHDF5(h5_diffexpr)
 
 pst <- h5read(pstfile, "pst")

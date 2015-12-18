@@ -6,6 +6,7 @@ data/*.Rdata
 *.Rmd
 *.pdf
 *.png
+*.txt
 \._*
 *~
 .DS_Store

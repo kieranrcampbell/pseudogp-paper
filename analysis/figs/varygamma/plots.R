@@ -67,7 +67,7 @@ plts <- lapply(names, function(name) {
 dplts <- plts[c(1,3,2)]
 
 dg <- cowplot::plot_grid(plotlist = dplts, nrow = 1, vjust = 1, 
-                         labels = c("α = 30, β = 5", "α = 5, β = 1", "α = 3, β = 1"))
+                         labels = c("A", "B", "C"))
 output_file <- file.path(base_dir, "/pseudogp-paper/analysis/figs/varygamma/S1_varygamma2.png")
 ggsave(dg, filename = "S1_varygamma2.png", width = 8, height = 3, scale = 1.5)
 

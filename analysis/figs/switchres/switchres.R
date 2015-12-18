@@ -10,6 +10,7 @@ library(dplyr)
 library(matrixStats)
 library(grid)
 library(scater)
+library(cowplot)
 
 
 makeSwitchPlots <- function(sce, pst) {
@@ -27,8 +28,8 @@ makeSwitchPlots <- function(sce, pst) {
   
   ## now subset down to things that are differentially expressed and have a t0 between 0 and 1
   diff_expr$qval <- p.adjust(diff_expr$pval, method = "BH")
-  de_filter <- filter(diff_expr, qval < 0.05, t0 > 0.05, t0 < 0.95)
-  de_filter  <- de_filter %>% group_by(gene) %>% filter(row_number() == 1) # strip out a duplicate
+  de_filter <- dplyr::filter(diff_expr, qval < 0.05, t0 > 0.05, t0 < 0.95)
+  de_filter  <- de_filter %>% group_by(gene) %>% dplyr::filter(row_number() == 1) # strip out a duplicate
   
   # ggpairs(de_filter)  #check for spurious correlations
   # qplot(de_filter$t0, geom = 'density')
@@ -42,7 +43,7 @@ makeSwitchPlots <- function(sce, pst) {
 
   # switch genes with error bars for *all* filtered genes --------------------------------------------
   set.seed(123)
-  ebar_sample <- sample(nrow(pst), 100)
+  ebar_sample <- sample(nrow(pst), min(nrow(pst), 100))
   
   k_samples <- apply(pst[ebar_sample,], 1, function(t) {
     sce_filter$pseudotime <- t
@@ -72,9 +73,9 @@ makeSwitchPlots <- function(sce, pst) {
   scecc <- sce_filter[inds,]
   
   de_filter <- mutate(de_filter, abs_med_act = (abs(med_act)))
-  de_filter <- mutate(de_filter, mean_exprs = fData(sce_filter)$mean_exprs)
   
   plots <- list()
+  activation_times <- list()
   for(j in 1:nrow(de_small)) {
     current_gene <- inds[j]
   
@@ -83,7 +84,10 @@ makeSwitchPlots <- function(sce, pst) {
       # print(current_gene)
       list(pars = as.numeric(switchde::fitModel(sce_filter[current_gene,])), t = t)
     })
-  
+
+    atimes <- sapply(outlier_samples, function(os) os$pars[3])
+    activation_times[[j]] <- atimes # yay horrible R
+      
     x <- exprs(sce_filter)[current_gene,]
   
     plt <- ggplot()
@@ -100,8 +104,21 @@ makeSwitchPlots <- function(sce, pst) {
                               size = 3, shape=21, fill='black', color='white', alpha=0.8)
     plots[[j]] <- plt
   }
-
-    # what’s the pseudotemporal switching resolution? -------------------------
+  cplt <- cowplot::plot_grid(plotlist=plots, nrow=2, labels=de_small$gene)
+  
+  # activation time density plot --------------------------------------------
+  at <- activation_times[1:5]
+  at <- data.frame(at)
+  names(at) <- de_small$gene[1:5]
+  atm <- melt(at, variable.name = "gene", value.name = "t0")
+  dens_plt <- ggplot(atm) + geom_density(aes(x = t0, fill = gene), alpha = 0.5) + 
+    xlim(0, 1) + xlab("Activation time") + ylab("Density") 
+  
+#   ggplot(atm) + geom_density(aes(x = t0)) + facet_wrap(~ gene, nrow = 1)+ 
+#     xlab("Activation time") + ylab("Density") + scale_x_continuous(breaks = c(0,0.5,1), limits = c(0,1))
+  
+  
+  # what’s the pseudotemporal switching resolution? -------------------------
   
   t_samples <- apply(pst[ebar_sample,], 1, function(t) {
     sce_filter$pseudotime <- t
@@ -116,12 +133,15 @@ makeSwitchPlots <- function(sce, pst) {
     geom_vline(xintercept = tmadmedian, linetype = 2, size = 1.1) + xlim(0, 1) +
     xlab("Median absolute deviation of activation time") + ylab("Density")
 
-  return(list(actplt, cplt, madplt))
+
+  
+  return(list(actplt = actplt, cplt = cplt, madplt = madplt))
 }
 
 
 
 base_dir <- "/net/isi-scratch/kieran/"
+#base_dir <- "~/mount/"
 
 load(file.path(base_dir, "pseudogp-paper/data/sce_monocle.Rdata"))
 sce_monocle <- sce_23
@@ -141,7 +161,9 @@ psts <- lapply(post_tracefiles, function(ptf) {
   h5read(ptf, "pst")
 })
 
-all_plts <- lapply(1:3, function(i) {
+to_do <- 1
+
+all_plts <- lapply(to_do, function(i) {
   sce <- sces[[i]]
   n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
   genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
@@ -150,13 +172,20 @@ all_plts <- lapply(1:3, function(i) {
 })
 
 ns <- c("monocle","ear","waterfall")
-setwd(file.path(base_dir, "pseudogp-paper/analysis/figs/switchres/"))
-for(i in 1:3) {
-  base_name <- paste0(ns[i], "_5_switchres")
+
+for(i in to_do) {
+  base_name <- paste0(ns[i], "_5_switchres.png")
+  plt_name <- file.path(base_dir, "pseudogp-paper/analysis/figs/switchres", base_name)
   plts <- all_plts[[i]]
-  ggsave(paste0(base_name, "_a.png"), actplt, width=6, height=4)
-  ggsave(paste0(base_name, "_b.png"), cplt, width=6, height=2.5, scale = 2)
-  ggsave(paste0(base_name, "_c.png"), madplt, width=3, height=2.5, scale = 1.6)
+
+  plts$actplt <- plts$actplt + theme(plot.margin = unit(c(1, 4, 1, 4), "cm"))
+  plts$densplt <- plts$densplt + theme(plot.margin = unit(rep(1, 4), "cm"))
+  plts$madplt <- plts$madplt + theme(plot.margin = unit(rep(1, 4), "cm"))
+  plts$cplt <- plts$cplt + theme(plot.margin = unit(rep(1,4), "cm"))
+  
+  middle_grid <- plot_grid(plts$densplt, plts$madplt, nrow = 1, labels = c("B", "C"), label_size = 16)
+  total_grid <- plot_grid(plts$actplt, middle_grid, plts$cplt, nrow = 3, labels = c("A", "", "D"), label_size = 16)
+  ggsave(total_grid, file = plt_name, width=8, height = 9, scale = 1.5)
 }
 
 
