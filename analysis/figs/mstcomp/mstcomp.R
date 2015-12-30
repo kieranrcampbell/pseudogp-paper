@@ -99,8 +99,23 @@ pst_sd <- sapply(pseudosamples, sd)
 pst_95 <- 2*pst_sd
 
 
-dplt <- ggplot(data.frame(pst_95)) + geom_density(aes(x = pst_95), fill = "darkred") +
+dplt <- ggplot(data.frame(pst_95)) + geom_density(aes(x = pst_95), fill = "black") +
   xlab(expression(2 * sigma)) + ylab("Density")
 
-cowplot::ggsave(dplt, file = file.path(fig_path, "S2_monocle_comparison.png"), width = 4, height = 3, scale = 1.2)
+## boxplot
+xp <- data.frame(t = do.call("c", pseudosamples))
+nsamples <- sapply(pseudosamples, length)
+cell <- lapply(1:length(nsamples), function(i) rep(i, nsamples[i]))
+cell <- do.call("c", cell)
+xp$cell <- as.factor(cell)
+
+mbplt <- ggplot(xp) + geom_boxplot(aes(x = cell, y = t), outlier.shape = NA) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
+  xlab("Cell") + ylab("Pseudotime")
+
+gplt <- plot_grid(mbplt, dplt, labels = c("A", "B"))
+cowplot::ggsave(gplt, file = file.path(fig_path, "S2_monocle_comparison.png"), width = 8, height = 3, scale = 1.2)
+
+
+
 
