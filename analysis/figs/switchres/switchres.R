@@ -11,6 +11,7 @@ library(matrixStats)
 library(grid)
 library(scater)
 library(cowplot)
+library(RColorBrewer)
 
 
 makeSwitchPlots <- function(sce, pst) {
@@ -65,6 +66,9 @@ makeSwitchPlots <- function(sce, pst) {
     geom_errorbar(data = idf, aes(x = t0, ymin = lower, ymax = upper), alpha = 0.2)
   #ggsave("5_switchres_a.png", actplt, width=6, height=4)
   
+
+
+  
   bottom_switch <- order(abs(de_filter$med_act))[1:5]
   top_switch <- order(abs(de_filter$med_act))[nrow(de_filter):(nrow(de_filter)-4)]
   de_small <- de_filter[c(top_switch, bottom_switch),]
@@ -81,7 +85,6 @@ makeSwitchPlots <- function(sce, pst) {
   
     outlier_samples <- apply(pst[ebar_sample,], 1, function(t) {
       sce_filter$pseudotime <- t
-      # print(current_gene)
       list(pars = as.numeric(switchde::fitModel(sce_filter[current_gene,])), t = t)
     })
 
@@ -110,10 +113,16 @@ makeSwitchPlots <- function(sce, pst) {
   at <- activation_times[1:5]
   at <- data.frame(at)
   names(at) <- de_small$gene[1:5]
-  atm <- melt(at, variable.name = "gene", value.name = "t0")
-  dens_plt <- ggplot(atm) + geom_density(aes(x = t0, fill = gene), alpha = 0.5) + 
-    xlim(0, 1) + xlab("Activation time") + ylab("Density") 
-  
+  #col_pal <- scale_colour_brewer(palette = "Set1", type = "qual")
+  cols <- brewer.pal(5, "Set1")
+  draw_at_plt <- function(i) {
+    x <- at[,i]
+    ggplot(data.frame(x)) + geom_density(aes(x = x), fill = cols[i]) + 
+      xlab("t0") + ylab("Density") + scale_x_continuous(limits = c(0,1), breaks = c(0, 0.5, 1))
+  }  
+  atplts <- lapply(1:5, draw_at_plt)
+  densplt <- plot_grid(plotlist = atplts, labels = names(at), nrow = 1)
+    
 #   ggplot(atm) + geom_density(aes(x = t0)) + facet_wrap(~ gene, nrow = 1)+ 
 #     xlab("Activation time") + ylab("Density") + scale_x_continuous(breaks = c(0,0.5,1), limits = c(0,1))
   
@@ -135,7 +144,7 @@ makeSwitchPlots <- function(sce, pst) {
 
 
   
-  return(list(actplt = actplt, cplt = cplt, madplt = madplt))
+  return(list(actplt = actplt, cplt = cplt, madplt = madplt, densplt = densplt))
 }
 
 
@@ -178,14 +187,17 @@ for(i in to_do) {
   plt_name <- file.path(base_dir, "pseudogp-paper/analysis/figs/switchres", base_name)
   plts <- all_plts[[i]]
 
-  plts$actplt <- plts$actplt + theme(plot.margin = unit(c(1, 4, 1, 4), "cm"))
+  plts$actplt <- plts$actplt + theme(plot.margin = unit(c(1, 4, 1, 4), "cm")) + xlab("t0")
   plts$densplt <- plts$densplt + theme(plot.margin = unit(rep(1, 4), "cm"))
-  plts$madplt <- plts$madplt + theme(plot.margin = unit(rep(1, 4), "cm"))
+  #plts$madplt <- plts$madplt + theme(plot.margin = unit(rep(1, 4), "cm"))
   plts$cplt <- plts$cplt + theme(plot.margin = unit(rep(1,4), "cm"))
   
-  middle_grid <- plot_grid(plts$densplt, plts$madplt, nrow = 1, labels = c("B", "C"), label_size = 16)
-  total_grid <- plot_grid(plts$actplt, middle_grid, plts$cplt, nrow = 3, labels = c("A", "", "D"), label_size = 16)
-  ggsave(total_grid, file = plt_name, width=8, height = 9, scale = 1.5)
+  #middle_grid <- plot_grid(plts$densplt, plts$madplt, nrow = 1, labels = c("B", "C"), label_size = 16)
+  total_grid <- plot_grid(plts$actplt, plts$cplt, plts$densplt, 
+                          nrow = 3, labels = c("A", "B", "C"), label_size = 16, rel_heights = c(1, 1.5, 1))
+  ggsave(total_grid, file = plt_name, width=8, height = 8, scale = 1.5)
 }
 
-
+## funky chris plot -----
+de_chris <- filter(de_filter, med_act > 30)
+de_5pts <- de_chris[c(1, 10, 12, 35, 44),]

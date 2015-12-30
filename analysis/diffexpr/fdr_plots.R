@@ -38,7 +38,7 @@ h5_diffexpr <- file.path(base_dir, "pseudogp-paper/data/monocle_diffexpr.h5")
 pstfile <- file.path(base_dir, "pseudogp-paper/data/monocle_stan_traces.h5")
 sce_file <- file.path(base_dir, "pseudogp-paper/data/sce_monocle.Rdata")
 load(sce_file)
-sce <- sce23
+sce <- sce_23
 
 n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
 genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
@@ -128,7 +128,8 @@ set.seed(123)
 genes <- c("ITGAE", "^ID1$")
 plts <- lapply(genes, makeGXPlot, sce, pst)
 
-gridplt <- cowplot::plot_grid(plotlist = plts, nrow = 1, labels = c("ITGAE", "ID1"), hjust = c(-2, -4), label_size = 12)
+gridplt <- cowplot::plot_grid(plotlist = plts, nrow = 1, labels = c("ITGAE", "ID1"), 
+                              hjust = c(-2, -4), vjust = c(0, 0), label_size = 12)
 #ggsave("goodbadplots.png", gridplt, width = 4, height = 2, scale = 1.3)
 
 
@@ -154,7 +155,8 @@ makeHeatmapPlot <- function(gene, sce, pst) {
 }
 
 heatplots <- lapply(genes, makeHeatmapPlot, sce, pst)
-heatplt <- plot_grid(plotlist = heatplots, nrow = 2, labels = c("ITGAE", "ID1"), label_size = 12, hjust = c(-2, -4)) 
+heatplt <- plot_grid(plotlist = heatplots, nrow = 2, 
+                     labels = c("ITGAE", "ID1"), label_size = 12, hjust = c(-2, -4)) 
 
 plots <- list(fe_plt, afdr_plt, gridplt, heatplt)
 # add margins
@@ -162,8 +164,9 @@ plots <- lapply(plots, function(plt) plt + theme(plot.margin = unit(rep(1, 4), "
 
 # lower_grid <- plot_grid(afdr_plt, gridplt, nrow = 1, labels = c("B", "C"), label_size = 16)
 
+plots <- plots[c(3,4,1,2)]
 all_plt <- cowplot::plot_grid(plotlist = plots, nrow = 2, 
-                              labels = c("A", "B", "C", "D"), label_size = 16, rel_heights = c(3,2.2))
+                              labels = c("A", "B", "C", "D"), label_size = 16, rel_heights = c(2.5,3))
 
 ggsave(file.path(fdr_dir, "fdr.png"), all_plt, width = 8, height = 6, scale = 1.5)
 
