@@ -70,7 +70,7 @@ feature_set <- order(rv, decreasing = TRUE)[seq_len(min(ntop, length(rv)))]
 #' it look most like 
 #+ pca-plt, fig.width=6, fig.height=5
 sce <- plotPCA(sce, colour_by = "wpst", ntop = ntop, return_SCESet = TRUE, scale_features = FALSE)
-Xpca <- redDim(sce)
+Xpca <- redDim(sce)[,1:2] # return only first 2 PCs
 
 #' We can also get a tSNE representation. To make it look most 'trajectory-like', we use
 #' a perplexity of 3:
@@ -111,7 +111,13 @@ wpst <- w_pseudotimes
 
 #' Fit the pseudotime model
 #+ fit-pseudotime
-fit <- fitPseudotime(X, initialise_from = "pca", smoothing_alpha = 8, smoothing_beta = 2, seed = 123)
+fit <- fitPseudotime(X, initialise_from = "pca", 
+                     smoothing_alpha = 8, smoothing_beta = 1, seed = 123,
+                     iter = 10000, thin = 5)
+
+#' Diagnostic plot
+#+ fit-diagnostic
+plotDiagnostic(fit)
 
 #' Plot the posterior mean curve
 #+ posmean-curve, fig.width=6, fig.height=5

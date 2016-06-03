@@ -32,15 +32,20 @@ library(pseudogp)
 #' be easily read in using `read_delim` from the `readr` package:
 #' 
 #+ read-data, message = FALSE
-base_dir <- "~/mount"
-data_dir <- file.path(base_dir, "datasets/ear/")
-output_hdf5 <- file.path(base_dir, "pseudogp-paper/data/ear_embeddings.h5")
-output_sce <- file.path(base_dir, "pseudogp-paper/data/sce_ear.Rdata")
 
-fname <- dir(data_dir)[grep("TPM_Matrix", dir(data_dir))]
-data_file <- file.path(data_dir, fname)
+www <- "http://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE71982&format=file&file=GSE71982%5FRSEM%5FTPM%5FMatrix%2Etxt%2Egz"
+filename <- "data/burns_raw.txt.gz"
 
-x <- as.data.frame(read_delim(data_file, "\t", quote = ''))
+if(!file.exists(filename)) {
+  download.file(www, filename)
+}
+
+output_hdf5 <- "data/burns_embeddings.h5"
+output_sce <- "data/sce_burns.Rdata"
+pst_output_hdf5 <- "data/burns_pseudotime_traces.h5"
+
+
+x <- as.data.frame(read_delim(filename, "\t", quote = ''))
 
 #' The first two rows of `x` (as far as we can tell) contain fluorescent intensity information about
 #' EGFP and tdTom so we can assign those to a separate data frame and all the transcription data
@@ -112,6 +117,7 @@ sce <- calculateQCMetrics(sce, feature_controls = ercc)
 #+ first-pca, fig.width=6, fig.height = 4
 sce <- plotPCA(sce, colour_by = "marker", ntop = 195, 
                ncomponents = 2, return_SCESet = TRUE, scale_features = FALSE)
+redDim(sce) <- redDim(sce)[,1:2]
 
 #' Now this looks like figure 4a flipped across the x-axis. Does this make sense with
 #' respect to fluorescent markers? The paper states
@@ -143,6 +149,7 @@ plotReducedDim(sce, colour_by = "cluster", shape_by = "marker")
 trajectory_cells <- sce$cluster %in% c(3,5,6)
 sct <- sce[, trajectory_cells]
 
+
 #' Let's have a go at finding a trajectory with `embeddr`, using the top 195 most
 #' variable genes with the standard correlation metric and 20 nearest neighbours:
 #+ quick-traj, fig.width=5, fig.height=5
@@ -160,10 +167,11 @@ plot_embedding(embeddr(sct, nn = 25))
 #' There's now a more clearly defined trajectory. We can try and fit a principal curve to it:
 #+ fit-curve, fig.width = 5, fig.height = 5
 sct <- embeddr(sct, nn = 25)
-sct <- sct[,redDim(sct)[,2] < 0.3] # cheekily remove an outlier
+sct <- sct[,redDim(sct)[,2] < 0.24] # remove outliers
 sct <- fit_pseudotime(sct)
-Xle <- redDim(sct) # Laplacian eigenmaps embedding we'll use
+Xle <- redDim(sct)[,1:2] # Laplacian eigenmaps embedding we'll use
 plot_embedding(sct)
+
 
 #' Let's do a final sanity check and make sure the direction of the genes is the same as that
 #' in figure 5b (or at least reversed, remember pseudotime is pseudo!).
@@ -180,14 +188,14 @@ plot_in_pseudotime(reverse_pseudotime(sct[pub_inds,]), color_by = "marker")
 #' Let's plot the PCA representation again:
 #+ pca-2, fig.width=6, fig.height=6
 sct <- plotPCA(sct, colour_by = "pseudotime", scale_features = FALSE, return_SCESet = TRUE)
-Xpca <- redDim(sct)
+Xpca <- redDim(sct)[, 1:2]
 
 #' Again, there's no *real* trajectory structure here. What about t-SNE? Let's be fair and plot over 
 #' a range of perplexities in case a certain one gives us something more amenable to 
 #' trajectory discovery:
 #+ tsnes, fig.width=9, fig.height=10
 set.seed(123) # this is tsne so we need a seed
-perplexities <- c(1,2,5,10,20,30)
+perplexities <- c(1,2,5,10,20)
 tsne_plts <- lapply(perplexities, function(p) plotTSNE(sct, colour_by = "marker", scale_features = FALSE, perplexity = p))
 plot_grid(plotlist = tsne_plts, nrow = 3, labels = as.character(perplexities))
 
@@ -206,47 +214,37 @@ Xtsne <- redDim(sct)
 #' Now we can save everything to HDF5. We'll call the pseudotime fit
 #' from `embeddr` as `t_gt`:
 #+ save-all
+t_gt <- pseudotime(sct)
 h5createFile(output_hdf5)
 h5write(Xle, output_hdf5, "Xle")
 h5write(Xpca, output_hdf5,"Xpca")
 h5write(Xtsne, output_hdf5, "Xtsne")
-h5write(pseudotime(sct), output_hdf5, "t_gt")
+h5write(t_gt, output_hdf5, "t_gt")
 
 #' and save the `SCESet` object too:
 #+ save-sce
-save(sct, file = output_sce)
+sce <- sct
+save(sce, file = output_sce)
 
+#+ Pseudotime fitting
 
-#' ## Fitting probabilistic trajectories to Burns et al dataset
-#' ### Kieran Campbell <kieran.campbell@sjc.ox.ac.uk>
-#' 
-#' This document goes through fitting the probabilistic curve to the Burns et al.
-#' dataset. To generate this document in markdown, run `knitr::spin("burns_pseudogp.R")` 
-#' from
-#' within R.
-
-
-#' Now read in the data
-#' 
-#+ data-read
-base_dir <- "~/mount"
-
-h5file <- file.path(base_dir, "pseudogp-paper/data/ear_embeddings.h5")
-output_hdf5 <- file.path(base_dir, "pseudogp-paper/data/ear_stan_traces.h5")
-
-X <- h5read(h5file, "Xle")
-X <- apply(X, 2, function(x) (x - mean(x)) / sd(x))
-t_gt <- h5read(h5file, "t_gt")
+X <- Xle
+#X <- apply(X, 2, function(x) (x - mean(x)) / sd(x))
 
 #' and quickly plot to make sure it looks right
 #+ quick-plot, fig.width=5, fig.height = 5
 ggplot(data.frame(X, t_gt)) + 
-  geom_point(aes(x = X1, y = X2, color = t_gt)) + theme_bw()
+  geom_point(aes(x = component_1, y = component_2, color = t_gt)) + theme_bw()
 
 #' ### Fit the pseudotime
 #+ pseudo-fit
 fit <- fitPseudotime(X, initialise_from = "principal_curve", 
-                     smoothing_alpha = 9, smoothing_beta = 1, seed = 123)
+                     smoothing_alpha = 9, smoothing_beta = 1, seed = 123,
+                     iter = 6000, thin = 3)
+
+#' Diagnostics
+#+ plot-diagnostic
+plotDiagnostic(fit)
 
 
 #' Plot posterior mean curves
@@ -267,12 +265,11 @@ lmcmc <- mcmc(extract(fit, "lambda")$lambda[,1,])
 
 #' ...and save them to HDF5
 #+ save-hdf5
-if(!file.exists(output_hdf5)) h5createFile(output_hdf5)
-
-h5write(X, output_hdf5, "X")
-h5write(pst$t, output_hdf5, "pst")
-h5write(as.matrix(smcmc), output_hdf5, "sigma")
-h5write(as.matrix(lmcmc), output_hdf5, "lambda")
+if(!file.exists(pst_output_hdf5)) h5createFile(pst_output_hdf5)
+h5write(X, pst_output_hdf5, "X")
+h5write(pst$t, pst_output_hdf5, "pst")
+h5write(as.matrix(smcmc), pst_output_hdf5, "sigma")
+h5write(as.matrix(lmcmc), pst_output_hdf5, "lambda")
 
 
 

@@ -93,19 +93,16 @@ makeTwoPointPlt <- function(X, tmap, lmap, smap, xl, yl, nts = c(0.5, 0.7)) {
   plt_joint
 }
 
-base_dir <- "~/mount/"
 set.seed(123)
 
 xlims <- list(c(-2.5, 2), c(-2, 2), c(-2, 2))
 ylims <- list(c(-2, 2), c(-4.2, 2.5), c(-2.5, 2.5))
 
-source(file.path(base_dir, "pseudogp-paper/gputils/gputils.R"))
+source("gputils/gputils.R")
 reps <- c("Xle", "Xle", "Xpca")
 
-post_tracefiles <- paste0(base_dir, "pseudogp-paper/data/",
-                          c("monocle_stan_traces.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
-rep_files <- paste0(base_dir, "pseudogp-paper/data/",
-                    c("trapnell_embeddings.h5", "ear_embeddings.h5", "waterfall_embeddings.h5"))
+post_tracefiles <- paste0("data/", c("trapnell", "burns", "shin"), "_pseudotime_traces.h5")
+rep_files <- paste0("data/", c("trapnell", "burns", "shin"), "_embeddings.h5")
 
 ## 'diffuseness' plots
 plts <- lapply(1:length(post_tracefiles), function(i) {
@@ -139,7 +136,7 @@ tplts <- lapply(1:length(post_tracefiles), function(i) {
 
 all_plots <- c(plts, tplts)
 ag <- cowplot::plot_grid(plotlist = all_plots, nrow = 2, labels = c("A", "B", "C", "D", "E", "F"))
-outfile <- file.path(base_dir, "/pseudogp-paper/analysis/figs/envelope/2_cloud.png")
+outfile <- file.path(base_dir, "figs/envelope/2_cloud.png")
 ggsave(ag, filename = outfile, width=8.5, height=6, scale = 1.5)
 
 

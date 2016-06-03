@@ -149,22 +149,18 @@ makeSwitchPlots <- function(sce, pst) {
 
 
 
-base_dir <- "/net/isi-scratch/kieran/"
-#base_dir <- "~/mount/"
+load("data/sce_trapnell.Rdata")
+sce_monocle <- sce
 
-load(file.path(base_dir, "pseudogp-paper/data/sce_monocle.Rdata"))
-sce_monocle <- sce_23
+load("data/sce_burns.Rdata")
+sce_ear <- sce
 
-load(file.path(base_dir, "pseudogp-paper/data/sce_ear.Rdata"))
-sce_ear <- sct
-
-load(file.path(base_dir, "pseudogp-paper/data/sce_waterfall.Rdata"))
+load("data/sce_shin.Rdata")
 sce_waterfall <- sce
 
 sces <- list(monocle = sce_monocle, ear = sce_ear, waterfall = sce_waterfall)
 
-post_tracefiles <- paste0(base_dir, "pseudogp-paper/data/",
-                          c("monocle_stan_traces.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
+post_tracefiles <- paste0("data/", c("trapnell", "burns", "shin"), "_pseudotime_traces.h5")
 
 psts <- lapply(post_tracefiles, function(ptf) {
   h5read(ptf, "pst")
@@ -180,11 +176,11 @@ all_plts <- lapply(to_do, function(i) {
   makeSwitchPlots(sce, psts[[i]])
 })
 
-ns <- c("monocle","ear","waterfall")
+ns <- c("trapnell","burns","shin")
 
 for(i in to_do) {
   base_name <- paste0(ns[i], "_5_switchres.png")
-  plt_name <- file.path(base_dir, "pseudogp-paper/analysis/figs/switchres", base_name)
+  plt_name <- "figs/switchres"
   plts <- all_plts[[i]]
 
   plts$actplt <- plts$actplt + theme(plot.margin = unit(c(1, 4, 1, 4), "cm")) + xlab("t0")
@@ -197,7 +193,3 @@ for(i in to_do) {
                           nrow = 3, labels = c("A", "B", "C"), label_size = 16, rel_heights = c(1, 1.5, 1))
   ggsave(total_grid, file = plt_name, width=8, height = 8, scale = 1.5)
 }
-
-## funky chris plot -----
-de_chris <- filter(de_filter, med_act > 30)
-de_5pts <- de_chris[c(1, 10, 12, 35, 44),]

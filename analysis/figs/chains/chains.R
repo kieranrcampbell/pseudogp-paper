@@ -7,15 +7,9 @@ library(pseudogp)
 library(cowplot)
 
 set.seed(123)
-base_dir <- "/net/isi-scratch/kieran/"
-#base_dir <- "~/mount/"
 
-#setwd(paste0(base_dir, "GP/pseudogp2/stan/gbio/chains"))
-#source(paste0(base_dir, "GP/pseudogp2/gputils/gputils.R"))
-
-h5outfile <- file.path(base_dir, "pseudogp-paper/data/chains.h5")
-
-embedding_file <- file.path(base_dir, "pseudogp-paper/data/trapnell_embeddings.h5")
+h5outfile <- "data/chains/chains.h5"
+embedding_file <- "data/trapnell_embeddings.h5"
 
 X <- h5read(embedding_file, "Xle")
 t_gt <- h5read(embedding_file, "t_gt")
@@ -36,8 +30,7 @@ for(i in 1:nrow(gab)) {
   fits <- c(fits, fit)
 }
 
-save(fits, file = file.path(base_dir, "pseudogp-paper/analysis/figs/chains/fits.Rdata"), compress = "gzip")
-load(file.path(base_dir, "pseudogp-paper/analysis/figs/chains/fits.Rdata"))
+save(fits, file = "data/chains/fits.Rdata", compress = "gzip")
 
 pcplts <- lapply(1:2, function(i) posteriorCurvePlot(X, fits[[i]]))
 # plot_grid(plotlist = pcplts, nrow = 1, labels = c("A", "B"))
@@ -48,7 +41,7 @@ hplts <- lapply(1:2, function(i) ggplot(data.frame(t = x[,i])) + geom_density(ae
 
 gplt <- plot_grid(plotlist = c(pcplts, hplts), labels = c("A", "B", "C", "D"))
 
-ggsave(file.path(base_dir, "pseudogp-paper/analysis/figs/chains/chains.png"), gplt,
+ggsave("figs/chains/chains.png", gplt,
        width = 8, height = 5)
 
 

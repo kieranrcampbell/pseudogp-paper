@@ -8,9 +8,8 @@ library(matrixStats)
 library(pseudogp)
 library(rhdf5)
 
-base_dir <- "~/mount/"
 
-post_tracefile <- file.path(base_dir, "pseudogp-paper/data/monocle_stan_traces.h5")
+post_tracefile <- "data/trapnell_pseudotime_traces.h5"
 
 pst <- h5read(post_tracefile, "pst")
 
@@ -31,7 +30,7 @@ plt <- ggplot(dm) + geom_density(aes(x = value, fill = variable)) +
   theme(legend.key.height=unit(2, "line"), legend.key.width = unit(2, "line")) +
   cowplot::theme_cowplot()
 
-ggsave(plt, filename = file.path(base_dir, "pseudogp-paper/analysis/figs/postuncert/pu_density.png"), 
+ggsave(plt, filename = "figs/postuncert/pu_density.png", 
                                  width = 8, height = 2, scale = 1.5)
 
 makeBoxplot <- function(pst) {
@@ -54,15 +53,14 @@ makeBoxplot <- function(pst) {
   return(plt)
 }
 
-post_tracefiles <- paste0(base_dir, "pseudogp-paper/data/",
-                          c("monocle_stan_traces.h5", "ear_stan_traces.h5", "waterfall_stan_traces.h5"))
+post_tracefiles <- paste0("data/", c("trapnell", "burns", "shin"), "_pseudotime_traces.h5")
 
 plts <- lapply(post_tracefiles, function(ptf) {
   pst <- h5read(ptf, "pst")
   makeBoxplot(pst)
 })
 
-output_file <- file.path(base_dir, "pseudogp-paper/analysis/figs/postuncert/3bcd_post_uncert.png")
+output_file <- "figs/postuncert/3bcd_post_uncert.png"
 pg <- cowplot::plot_grid(plotlist = plts, nrow = 1, labels = c("B","C","D"), rel_widths = c(4, 3, 3))
 cowplot::ggsave(pg, filename = output_file, width = 8, height = 2, scale = 1.5)
 
