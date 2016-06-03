@@ -6,6 +6,7 @@
 
 #+ load-all, message=FALSE, warning=FALSE
 library(monocle) ## for monocle data
+library(HSMMSingleCell)
 library(ggplot2)
 library(rhdf5)
 library(scater) 
@@ -16,7 +17,7 @@ library(rstan)
 library(rhdf5)
 library(MCMCglmm)
 library(coda)
-library(monocle)
+library(pseudogp)
 
 
 
@@ -28,8 +29,23 @@ output_sce <- "data/sce_trapnell.Rdata"
 #' First we create the `SCESet` using the data from the `HSMMSingleCell` package.
 #' This is a bit fiddly since HSMMSingleCell changed format recently
 #+ create-sce, message=FALSE, warning=FALSE
-data(HSMM)
-sce <- fromCellDataSet(HSMM, exprs_values = 'fpkm')
+sce <- NULL
+hsmm_data_available <- data(package='HSMMSingleCell')$results[,3]
+if("HSMM" %in% hsmm_data_available) {
+  data(HSMM)
+  sce <- fromCellDataSet(HSMM, exprs_values = 'fpkm')
+} else if("HSMM_expr_matrix" %in% hsmm_data_available) {
+  data(HSMM_expr_matrix)
+  data(HSMM_gene_annotation)
+  data(HSMM_sample_sheet)
+
+  pd <- new('AnnotatedDataFrame', data = HSMM_sample_sheet)
+  fd <- new('AnnotatedDataFrame', data = HSMM_gene_annotation)
+  sce <- newSCESet(fpkmData = HSMM_expr_matrix, phenoData = pd, featureData = fd)
+} else {
+  stop('No recognised data types in HSMMSingleCell')
+}
+
 
 ## add cell_id to HSMM to play nicely with dplyr
 sce$cell_id <- rownames(pData(sce))

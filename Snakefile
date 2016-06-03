@@ -2,6 +2,23 @@
 de_runs = ["1,50", "51,100", "101,150", "151,200", "201,250", "251,300",
 			"301,350", "351,400", "401,450", "451,500"]
 
+rule all:
+     input:
+	"data/sce_trapnell.Rdata",
+	"data/sce_shin.Rdata",
+	"data/sce_burns.Rdata",
+	"figs/chains/chains.png",
+	"figs/envelope/2_cloud.png",
+	"figs/postuncert/pu_density.png",
+	"figs/postuncert/3bcd_post_uncert.png"
+	"figs/switchres/trapnell_5_switchres.png",
+	"figs/switchres/burns_5_switchres.png",
+	"figs/switchres/shin_5_switchres.png",
+	"figs/fdr.png"
+
+	
+
+	
 
 rule trapnell_basic:
 	output:
