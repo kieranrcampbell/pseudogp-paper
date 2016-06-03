@@ -51,9 +51,8 @@ rownames(expr) <- genenames
 pd <- new("AnnotatedDataFrame", data.frame(wpst = w_pseudotimes))
 rownames(pd) <- cellnames
 
-sce <- newSCESet(expr = expr, phenoData = pd, logExprsOffset = 1)
+sce <- newSCESet(fpkmData = expr, phenoData = pd, logExprsOffset = 1)
 
-ercc <- grep("ERCC", featureNames(sce), ignore.case = TRUE)
 sce <- calculateQCMetrics(sce)
 
 

@@ -12,14 +12,20 @@ library(cowplot)
 library(gplots)
 library(grid)
 
-base_dir <- "~/mount"
-fdr_dir <- file.path(base_dir, "pseudogp-paper/analysis/diffexpr")
 
-source(file.path(fdr_dir, "common.R"))
+source("analysis/diffexpr/common.R")
 
-monocle <- read_csv(file.path(fdr_dir, "monocle_fdr.txt"))
-ear <- read_csv(file.path(fdr_dir, "ear_fdr.txt"))
-waterfall <- read_csv(file.path(fdr_dir, "waterfall_fdr.txt"))
+h5_diffexpr <- "data/diffexpr/trapnell_de_traces.h5"
+pstfile <- "data/trapnell_pseudotime_traces.h5"
+sce_file <- "data/sce_trapnell.Rdata"
+load(sce_file)
+
+monocle <- read_csv("data/diffexpr/trapnell_fdr.csv")
+ear <- read_csv("data/diffexpr/burns_fdr.csv")
+waterfall <- read_csv("data/diffexpr/shin_fdr.csv")
+
+args <- commandArgs(trailingOnly = TRUE)
+fdr_plot_filename <- args[1]
 
 fdrFromDF <- function(df) filter(df, test == "ss", type == "falsepos")$value
 fdr <- data.frame(Publication = c("Trapnell 2014", "Burns 2015", "Shin 2015"),
@@ -34,11 +40,7 @@ afdr_plt <- ggplot(fdr) + geom_bar(aes(x = Publication, y = FDR), stat = "identi
 
 #ggsave(file.path(fdr_dir, "afdr.png"), afdr_plt, width = 6, height = 5, scale = 1.6)
 
-h5_diffexpr <- file.path(base_dir, "pseudogp-paper/data/monocle_diffexpr.h5")
-pstfile <- file.path(base_dir, "pseudogp-paper/data/monocle_stan_traces.h5")
-sce_file <- file.path(base_dir, "pseudogp-paper/data/sce_monocle.Rdata")
-load(sce_file)
-sce <- sce_23
+
 
 n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
 genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
@@ -168,6 +170,6 @@ plots <- plots[c(3,4,1,2)]
 all_plt <- cowplot::plot_grid(plotlist = plots, nrow = 2, 
                               labels = c("A", "B", "C", "D"), label_size = 16, rel_heights = c(2.5,3))
 
-ggsave(file.path(fdr_dir, "fdr.png"), all_plt, width = 8, height = 6, scale = 1.5)
+ggsave(fdr_plot_filename, all_plt, width = 8, height = 6, scale = 1.5)
 
 
