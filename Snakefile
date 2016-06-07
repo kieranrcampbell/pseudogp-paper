@@ -112,7 +112,7 @@ rule trapnell_fdr:
 		plot_pdf = "figs/diffexpr/trapnell_plots.pdf",
 		fdr_csv = "data/diffexpr/trapnell_fdr.csv"
 	shell:
-		"Rscript analysis/diffexpr/1_diffexpr_analysis.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
+		"Rscript analysis/diffexpr/2_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
 
 rule shin_diffexpr:
 	input:
@@ -132,7 +132,7 @@ rule shin_fdr:
 		plot_pdf = "figs/diffexpr/shin_plots.pdf",
 		fdr_csv = "data/diffexpr/shin_fdr.csv"
 	shell:
-		"Rscript analysis/diffexpr/1_diffexpr_analysis.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
+		"Rscript analysis/diffexpr/2_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
 
 
 rule burns_diffexpr:
@@ -153,7 +153,7 @@ rule burns_fdr:
 		plot_pdf = "figs/diffexpr/burns_plots.pdf",
 		fdr_csv = "data/diffexpr/burns_fdr.csv"
 	shell:
-		"Rscript analysis/diffexpr/1_diffexpr_analysis.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
+		"Rscript analysis/diffexpr/2_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
 
 rule make_fdr_plots:
 	input:

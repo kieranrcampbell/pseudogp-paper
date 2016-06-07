@@ -160,23 +160,25 @@ sce_waterfall <- sce
 
 sces <- list(monocle = sce_monocle, ear = sce_ear, waterfall = sce_waterfall)
 
-post_tracefiles <- paste0("data/", c("trapnell", "burns", "shin"), "_pseudotime_traces.h5")
+studies <- c("trapnell","burns","shin")
+
+post_tracefiles <- paste0("data/", studies, "_pseudotime_traces.h5")
 
 psts <- lapply(post_tracefiles, function(ptf) {
   h5read(ptf, "pst")
 })
 
-to_do <- 1:3
 
-all_plts <- lapply(to_do, function(i) {
+all_plts <- lapply(seq_along(studies), function(i) {
+  print(i)
   sce <- sces[[i]]
   n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
   genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
+  genes_to_use <- genes_to_use & rowMeans(exprs(sce) > 1)
   sce <- sce[genes_to_use,]
   makeSwitchPlots(sce, psts[[i]])
 })
 
-ns <- c("trapnell","burns","shin")
 
 for(i in to_do) {
   base_name <- paste0(ns[i], "_5_switchres.png")

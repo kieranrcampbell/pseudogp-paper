@@ -239,7 +239,6 @@ generatePlots <- function(SL, sce, pst, outputfile, fdrfile, save_individual = F
   
   labels <- c("A", "B", "C", "D")
   all_plot <- plot_grid(plt_ss_prop, plt_ss_median, plt_sw_prop, plt_sw_median, ncol = 2, labels = labels)
-  if(save_individual) cowplot::ggsave("/net/isi-scratch/kieran/GP/pseudogp2/diffexpr/stan/fdr.png", plot = all_plot, width = 3, height = 2, scale = 4)
   
   ## boxplot time
   ss_bxplt <- select(filter(dfc, is_sig), psig, med_q_val)
