@@ -103,8 +103,9 @@ rule trapnell_diffexpr:
 		traces = "data/trapnell_pseudotime_traces.h5"
 	output:
 		"data/diffexpr/trapnell_de_traces.h5"
-	shell:
-		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output} {de_runs}"
+	run:
+		for de_run in de_runs:
+			shell("Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output} {de_run}")
 
 rule trapnell_fdr:
 	input:
@@ -123,8 +124,9 @@ rule shin_diffexpr:
 		traces = "data/shin_pseudotime_traces.h5"
 	output:
 		"data/diffexpr/shin_de_traces.h5"
-	shell:
-		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output} {de_runs}"
+	run:
+		for de_run in de_runs:
+			shell("Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output} {de_run}")
 
 rule shin_fdr:
 	input:
@@ -144,8 +146,9 @@ rule burns_diffexpr:
 		traces = "data/burns_pseudotime_traces.h5"
 	output:
 		"data/diffexpr/burns_de_traces.h5"
-	shell:
-		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output} {de_runs}"
+	run:
+		for de_run in de_runs:
+			shell("Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output} {de_run}")
 
 rule burns_fdr:
 	input:

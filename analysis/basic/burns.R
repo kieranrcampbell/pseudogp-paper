@@ -28,6 +28,9 @@ library(ggplot2)
 library(moments)
 library(pseudogp)
 
+pdf("figs/diagnostic/burns.pdf", width = 9)
+
+
 #' For the purposes of this we've downloaded the TPM matrix, which can then
 #' be easily read in using `read_delim` from the `readr` package:
 #' 

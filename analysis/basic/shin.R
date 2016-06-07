@@ -24,7 +24,7 @@ output_sce <- "data/sce_shin.Rdata"
 h5outfile <- "data/shin_embeddings.h5"
 pst_output_file <- "data/shin_pseudotime_traces.h5"
 
-pdf("figs/diagnostic/shin.pdf")
+pdf("figs/diagnostic/shin.pdf", width = 9)
 
 #' Let's download nad load the raw data
 #+ download-data
@@ -67,9 +67,10 @@ feature_set <- order(rv, decreasing = TRUE)[seq_len(min(ntop, length(rv)))]
 #' ### Representations
 #' 
 #' To get a PCA representation, we use the top 195 genes but *don't* scale the features. This makes
-#' it look most like 
+#' it look most like figure in the paper
 #+ pca-plt, fig.width=6, fig.height=5
-sce <- plotPCA(sce, colour_by = "wpst", ntop = ntop, return_SCESet = TRUE, scale_features = FALSE)
+sce <- plotPCA(sce, colour_by = "wpst", ntop = ntop, return_SCESet = TRUE, 
+               scale_features = FALSE, exprs_values = "fpkm")
 Xpca <- redDim(sce)[,1:2] # return only first 2 PCs
 
 #' We can also get a tSNE representation. To make it look most 'trajectory-like', we use

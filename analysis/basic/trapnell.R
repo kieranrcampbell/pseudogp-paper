@@ -26,7 +26,7 @@ output_hdf5 <- "data/trapnell_embeddings.h5"
 pst_output_hdf5 <- "data/trapnell_pseudotime_traces.h5"
 output_sce <- "data/sce_trapnell.Rdata"
 
-pdf("figs/diagnostic/trapnell.pdf")
+pdf("figs/diagnostic/trapnell.pdf", width = 9)
 
 #' First we create the `SCESet` using the data from the `HSMMSingleCell` package.
 #' This is a bit fiddly since HSMMSingleCell changed format recently
