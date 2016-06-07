@@ -94,24 +94,15 @@ rule fig_switchres:
 	shell:
 		"Rscript analysis/figs/switchres/switchres.R"
 
-rule tmp_confuse_snakemake:
-	output:
-		expand("data/diffexpr/trapnell_{de_run}", de_run = de_runs),
-		expand("data/diffexpr/shin_{de_run}", de_run = de_runs),
-		expand("data/diffexpr/burns_{de_run}", de_run = de_runs)
-	run:
-		for de_run in de_runs:
-		    shell("touch data/diffexpr/trapnell_{de_run} data/diffexpr/shin_{de_run} data/diffexpr/burns_{de_run}")
 
 rule trapnell_diffexpr:
 	input:
 		sce = "data/sce_trapnell.Rdata",
 		traces = "data/trapnell_pseudotime_traces.h5",
-		tmp = expand("data/diffexpr/trapnell_{de_run}", de_run = de_runs)
 	output:
-		traces = "data/diffexpr/trapnell_de_traces.h5",
+		expand("data/diffexpr/trapnell/de_{de_run}.csv", de_run = de_runs)
 	shell:
-		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output.traces} {input.tmp}"
+		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output}"
 
 rule trapnell_fdr:
 	input:
@@ -127,12 +118,11 @@ rule trapnell_fdr:
 rule shin_diffexpr:
 	input:
 		sce = "data/sce_shin.Rdata",
-		traces = "data/shin_pseudotime_traces.h5",
-		tmp = expand("data/diffexpr/shin_{de_run}", de_run = de_runs)
+		traces = "data/shin_pseudotime_traces.h5"
 	output:
-		traces = "data/diffexpr/shin_de_traces.h5",
+		expand("data/diffexpr/shin/de_{de_run}.csv", de_run = de_runs)
 	shell:
-		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output.traces} {input.tmp}"
+		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output}"
 
 
 rule shin_fdr:
@@ -151,11 +141,10 @@ rule burns_diffexpr:
 	input:
 		sce = "data/sce_burns.Rdata",
 		traces = "data/burns_pseudotime_traces.h5",
-		tmp = expand("data/diffexpr/burns_{de_run}", de_run = de_runs)
 	output:
-		traces = "data/diffexpr/burns_de_traces.h5",
+		expand("data/diffexpr/burns/de_{de_run}.csv", de_run = de_runs)
 	shell:
-		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output.traces} {input.tmp}"
+		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output}"
 
 rule burns_fdr:
 	input:

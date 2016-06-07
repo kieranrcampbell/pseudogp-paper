@@ -11,6 +11,7 @@ library(embeddr)
 library(dplyr)
 library(rhdf5)
 library(switchde)
+library(reshape2)
 
 pvalsFromHDF5 <- function(h5file) {
   ssp <- h5read(h5file, "ss")
@@ -50,7 +51,7 @@ pvalsFromHDF5 <- function(h5file) {
 }
 
 
-doDiffExprAnalysis <- function(sce, pst, start, end, h5outputfile) {
+doDiffExprAnalysis <- function(sce, pst, start, end, output_csv) {
   ## subset to genes expressed in at lesat 10% of cells
   n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
   genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
@@ -62,7 +63,7 @@ doDiffExprAnalysis <- function(sce, pst, start, end, h5outputfile) {
   ngenes <- nrow(sce) # number of genes
   n_pst <- nrow(pst) # number of pseudotime samples
   
-  ss_pvals <- switch_pvals <- matrix(NA, nrow = ngenes, ncol = n_pst)
+  ss_pvals <- matrix(NA, nrow = ngenes, ncol = n_pst)
   
   for(i in 1:n_pst) {
     sce$pseudotime <- t_i <- pst[i,]
@@ -71,20 +72,24 @@ doDiffExprAnalysis <- function(sce, pst, start, end, h5outputfile) {
     ss_pvals[,i] <- ss_test$p_val
     
     # switch model
-    switch_pv <- testDE(sce)
-    switch_pvals[,i] <- switch_pv[1,]
+    # switch_pv <- testDE(sce)
+    # switch_pvals[,i] <- switch_pv[1,]
   }
 
   ss_pvals <- data.frame(ss_pvals)
-  switch_pvals <- data.frame(switch_pvals)
-  ss_pvals$Gene <- switch_pvals$Gene <- featureNames(sce)
+  names(ss_pvals) <- paste0(sample, seq_length(ncol(ss_pvals)))
+  # switch_pvals <- data.frame(switch_pvals)
+  ss_pvals$Gene <- featureNames(sce)
+  
+  dfp <- melt(ss_pvals, id.vars = "Gene", variable.name = "Sample", value.name = "Pval")
   
   ## write results
-  if(!file.exists(h5outputfile)) h5createFile(h5outputfile)
-  h5createGroup(h5outputfile, "ss")
-  h5createGroup(h5outputfile, "switch")
-  h5write(ss_pvals, h5outputfile, paste0("ss/", as.character(start), "_", as.character(end)))
-  h5write(switch_pvals, h5outputfile, paste0("switch/", as.character(start), "_", as.character(end)))
+  # if(!file.exists(h5outputfile)) h5createFile(h5outputfile)
+  # h5createGroup(h5outputfile, "ss")
+  # h5createGroup(h5outputfile, "switch")
+  # h5write(ss_pvals, h5outputfile, paste0("ss/", as.character(start), "_", as.character(end)))
+  # h5write(switch_pvals, h5outputfile, paste0("switch/", as.character(start), "_", as.character(end)))
+  write_csv(dfp, output_csv)
   print("[de.R] Done")
 }
 
