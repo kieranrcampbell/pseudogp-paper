@@ -31,7 +31,8 @@ rule trapnell_basic:
 	output:
 		"data/trapnell_embeddings.h5", # reduced dimension representation
 		"data/sce_trapnell.Rdata", # Scater object holding gene expression
-		"data/trapnell_pseudotime_traces.h5" # pseudotime traces
+		"data/trapnell_pseudotime_traces.h5", # pseudotime traces
+		"figs/diagnostic/trapnell.pdf"
 	shell:
 		"Rscript analysis/basic/trapnell.R"
 
@@ -40,7 +41,8 @@ rule shin_basic:
 		"data/shin_embeddings.h5", # reduced dimension representation
 		"data/sce_shin.Rdata", # Scater object holding gene expression
 		"data/shin_pseudotime_traces.h5", # pseudotime traces
-		"data/waterfall_data.xlsx" # raw
+		"data/waterfall_data.xlsx", # raw
+		"figs/diagnostic/shin.pdf"
 	shell:
 		"Rscript analysis/basic/shin.R"
 
@@ -50,7 +52,8 @@ rule burns_basic:
 		"data/burns_embeddings.h5", # reduced dimension representation
 		"data/sce_burns.Rdata", # Scater object holding gene expression
 		"data/burns_pseudotime_traces.h5", # pseudotime traces
-		"data/burns_raw.txt.gz" # raw TPM data
+		"data/burns_raw.txt.gz", # raw TPM data,
+		"figs/diagnostic/burns.pdf"
 	shell:
 		"Rscript analysis/basic/burns.R"
 
@@ -112,7 +115,7 @@ rule trapnell_fdr:
 		plot_pdf = "figs/diffexpr/trapnell_plots.pdf",
 		fdr_csv = "data/diffexpr/trapnell_fdr.csv"
 	shell:
-		"Rscript analysis/diffexpr/2_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
+		"Rscript analysis/diffexpr/1_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
 
 rule shin_diffexpr:
 	input:
@@ -132,7 +135,7 @@ rule shin_fdr:
 		plot_pdf = "figs/diffexpr/shin_plots.pdf",
 		fdr_csv = "data/diffexpr/shin_fdr.csv"
 	shell:
-		"Rscript analysis/diffexpr/2_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
+		"Rscript analysis/diffexpr/1_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
 
 
 rule burns_diffexpr:
@@ -153,7 +156,7 @@ rule burns_fdr:
 		plot_pdf = "figs/diffexpr/burns_plots.pdf",
 		fdr_csv = "data/diffexpr/burns_fdr.csv"
 	shell:
-		"Rscript analysis/diffexpr/2_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
+		"Rscript analysis/diffexpr/1_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
 
 rule make_fdr_plots:
 	input:

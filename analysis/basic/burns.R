@@ -44,7 +44,7 @@ output_hdf5 <- "data/burns_embeddings.h5"
 output_sce <- "data/sce_burns.Rdata"
 pst_output_hdf5 <- "data/burns_pseudotime_traces.h5"
 
-
+pdf("figs/diagnostic/burns.pdf")
 x <- as.data.frame(read_delim(filename, "\t", quote = ''))
 
 #' The first two rows of `x` (as far as we can tell) contain fluorescent intensity information about
@@ -271,5 +271,5 @@ h5write(pst$t, pst_output_hdf5, "pst")
 h5write(as.matrix(smcmc), pst_output_hdf5, "sigma")
 h5write(as.matrix(lmcmc), pst_output_hdf5, "lambda")
 
-
+dev.off()
 

@@ -24,6 +24,7 @@ output_sce <- "data/sce_shin.Rdata"
 h5outfile <- "data/shin_embeddings.h5"
 pst_output_file <- "data/shin_pseudotime_traces.h5"
 
+pdf("figs/diagnostic/shin.pdf")
 
 #' Let's download nad load the raw data
 #+ download-data
@@ -144,3 +145,4 @@ h5write(pst$t, pst_output_file, "pst")
 h5write(as.matrix(smcmc), pst_output_file, "sigma")
 h5write(as.matrix(lmcmc), pst_output_file, "lambda")
 
+dev.off()
