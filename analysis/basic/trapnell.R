@@ -23,7 +23,7 @@ library(pseudogp)
 
 
 output_hdf5 <- "data/trapnell_embeddings.h5"
-pst_output_hdf5 <- "data/trapnell_stan_traces.h5"
+pst_output_hdf5 <- "data/trapnell_pseudotime_traces.h5"
 output_sce <- "data/sce_trapnell.Rdata"
 
 #' First we create the `SCESet` using the data from the `HSMMSingleCell` package.

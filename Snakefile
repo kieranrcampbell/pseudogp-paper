@@ -1,20 +1,27 @@
+import glob
 
 de_runs = ["1,50", "51,100", "101,150", "151,200", "201,250", "251,300",
 			"301,350", "351,400", "401,450", "451,500"]
 
+studies = ["trapnell", "shin", "burns"]
+
+pst_traces = expand("data/{study}_pseudotime_traces.h5", study = studies)
+embeddings = expand("data/{study}_embeddings.h5", study = studies)
+sces = expand("data/sce_{study}.Rdata", study = studies)
+
+
 rule all:
-     input:
-	"data/sce_trapnell.Rdata",
-	"data/sce_shin.Rdata",
-	"data/sce_burns.Rdata",
-	"figs/chains/chains.png",
-	"figs/envelope/2_cloud.png",
-	"figs/postuncert/pu_density.png",
-	"figs/postuncert/3bcd_post_uncert.png"
-	"figs/switchres/trapnell_5_switchres.png",
-	"figs/switchres/burns_5_switchres.png",
-	"figs/switchres/shin_5_switchres.png",
-	"figs/fdr.png"
+	input:
+		pst_traces,
+		sces,
+		"figs/chains/chains.png",
+		"figs/envelope/2_cloud.png",
+		"figs/postuncert/pu_density.png",
+		"figs/postuncert/3bcd_post_uncert.png",
+		"figs/switchres/trapnell_5_switchres.png",
+		"figs/switchres/burns_5_switchres.png",
+		"figs/switchres/shin_5_switchres.png",
+		"figs/fdr.png"
 
 	
 
@@ -58,8 +65,8 @@ rule fig_chains:
 
 rule fig_envelope:
 	input:
-		"data/*_pseudotime_traces.h5",
-		"data/*_embeddings.h5"
+		pst_traces,
+		embeddings,
 	output:
 		"figs/envelope/2_cloud.png"
 	shell:
@@ -67,21 +74,23 @@ rule fig_envelope:
 
 rule fig_postuncert:
 	input:
-		"data/*_pseudotime_traces.h5"
+		pst_traces
 	output:
 		"figs/postuncert/pu_density.png",
 		"figs/postuncert/3bcd_post_uncert.png"
 	shell:
-		"Rscript analysis/figs/postuncert/postuncert.png"
+		"Rscript analysis/figs/postuncert/postuncert.R"
 
 rule fig_switchres:
 	input:
-		"data/*_pseudotime_traces.h5",
-		"data/sce*.Rdata"
+		sces,
+		pst_traces
 	output:
 		"figs/switchres/trapnell_5_switchres.png",
 		"figs/switchres/burns_5_switchres.png",
 		"figs/switchres/shin_5_switchres.png"
+	shell:
+		"Rscript analysis/figs/switchres/switchres.R"
 
 
 
