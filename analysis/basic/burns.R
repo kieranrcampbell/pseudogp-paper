@@ -241,9 +241,9 @@ ggplot(data.frame(X, t_gt)) +
 
 #' ### Fit the pseudotime
 #+ pseudo-fit
-fit <- fitPseudotime(X, initialise_from = "principal_curve", 
+fit <- fitPseudotime(X, initialise_from = "pca", 
                      smoothing_alpha = 14, smoothing_beta = 1, seed = 123,
-                     iter = 6000, thin = 3)
+                     iter = 12000, thin = 6)
 
 #' Diagnostics
 #+ plot-diagnostic

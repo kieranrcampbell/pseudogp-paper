@@ -74,6 +74,10 @@ doDiffExprAnalysis <- function(sce, pst, start, end, h5outputfile) {
     switch_pv <- testDE(sce)
     switch_pvals[,i] <- switch_pv[1,]
   }
+
+  ss_pvals <- data.frame(ss_pvals)
+  switch_pvals <- data.frame(switch_pvals)
+  ss_pvals$Gene <- switch_pvals$Gene <- featureNames(sce)
   
   ## write results
   if(!file.exists(h5outputfile)) h5createFile(h5outputfile)

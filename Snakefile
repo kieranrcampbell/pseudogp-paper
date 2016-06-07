@@ -1,7 +1,7 @@
 import glob
 
-de_runs = ["1,50", "51,100", "101,150", "151,200", "201,250", "251,300",
-			"301,350", "351,400", "401,450", "451,500"]
+de_runs = ["1x50", "51x100", "101x150", "151x200", "201x250", "251x300",
+			"301x350", "351x400", "401x450", "451x500"]
 
 studies = ["trapnell", "shin", "burns"]
 
@@ -25,8 +25,6 @@ rule all:
 
 	
 
-	
-
 rule trapnell_basic:
 	output:
 		"data/trapnell_embeddings.h5", # reduced dimension representation
@@ -35,6 +33,7 @@ rule trapnell_basic:
 		"figs/diagnostic/trapnell.pdf"
 	shell:
 		"Rscript analysis/basic/trapnell.R"
+
 
 rule shin_basic:
 	output:
@@ -95,17 +94,24 @@ rule fig_switchres:
 	shell:
 		"Rscript analysis/figs/switchres/switchres.R"
 
-
+rule tmp_confuse_snakemake:
+	output:
+		expand("data/diffexpr/trapnell_{de_run}", de_run = de_runs),
+		expand("data/diffexpr/shin_{de_run}", de_run = de_runs),
+		expand("data/diffexpr/burns_{de_run}", de_run = de_runs)
+	run:
+		for de_run in de_runs:
+		    shell("touch data/diffexpr/trapnell_{de_run} data/diffexpr/shin_{de_run} data/diffexpr/burns_{de_run}")
 
 rule trapnell_diffexpr:
 	input:
 		sce = "data/sce_trapnell.Rdata",
-		traces = "data/trapnell_pseudotime_traces.h5"
+		traces = "data/trapnell_pseudotime_traces.h5",
+		tmp = expand("data/diffexpr/trapnell_{de_run}", de_run = de_runs)
 	output:
-		"data/diffexpr/trapnell_de_traces.h5"
-	run:
-		for de_run in de_runs:
-			shell("Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output} {de_run}")
+		traces = "data/diffexpr/trapnell_de_traces.h5",
+	shell:
+		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output.traces} {input.tmp}"
 
 rule trapnell_fdr:
 	input:
@@ -121,12 +127,13 @@ rule trapnell_fdr:
 rule shin_diffexpr:
 	input:
 		sce = "data/sce_shin.Rdata",
-		traces = "data/shin_pseudotime_traces.h5"
+		traces = "data/shin_pseudotime_traces.h5",
+		tmp = expand("data/diffexpr/shin_{de_run}", de_run = de_runs)
 	output:
-		"data/diffexpr/shin_de_traces.h5"
-	run:
-		for de_run in de_runs:
-			shell("Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output} {de_run}")
+		traces = "data/diffexpr/shin_de_traces.h5",
+	shell:
+		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output.traces} {input.tmp}"
+
 
 rule shin_fdr:
 	input:
@@ -143,12 +150,12 @@ rule shin_fdr:
 rule burns_diffexpr:
 	input:
 		sce = "data/sce_burns.Rdata",
-		traces = "data/burns_pseudotime_traces.h5"
+		traces = "data/burns_pseudotime_traces.h5",
+		tmp = expand("data/diffexpr/burns_{de_run}", de_run = de_runs)
 	output:
-		"data/diffexpr/burns_de_traces.h5"
-	run:
-		for de_run in de_runs:
-			shell("Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output} {de_run}")
+		traces = "data/diffexpr/burns_de_traces.h5",
+	shell:
+		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output.traces} {input.tmp}"
 
 rule burns_fdr:
 	input:
