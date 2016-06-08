@@ -195,4 +195,10 @@ rule resample_gplvm:
 	shell:
 		"Rscript analysis/figs/resamples/1_fit_gplvm.R {wildcards.resample}"
 
-
+rule resample_choose_genes:
+	input:
+		"data/sce_trapnell.Rdata"
+	output:
+		"data/resamples/sce_trapnell_resamples.Rdata"
+	shell:
+		"Rscript analysis/figs/resamples/2_choose_genes.R"
