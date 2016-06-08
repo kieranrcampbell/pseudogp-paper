@@ -14,6 +14,7 @@ end <- NULL
 tracefile <- csv_file <- sce_file <- statusfile <- NULL
 
 args <- commandArgs(trailingOnly = TRUE)
+print(args)
 
 if(length(args) > 0) {
   tracefile <- args[1]

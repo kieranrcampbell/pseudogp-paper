@@ -1,6 +1,6 @@
 import glob
 
-de_runs = ["1x50", "51x100", "101x150", "151x200", "201x250", "251x300",
+DE_RUNS = ["1x50", "51x100", "101x150", "151x200", "201x250", "251x300",
 			"301x350", "351x400", "401x450", "451x500"]
 
 studies = ["trapnell", "shin", "burns"]
@@ -9,6 +9,9 @@ pst_traces = expand("data/{study}_pseudotime_traces.h5", study = studies)
 embeddings = expand("data/{study}_embeddings.h5", study = studies)
 sces = expand("data/sce_{study}.Rdata", study = studies)
 
+trapnell_de = expand("data/diffexpr/trapnell/de_{tde_run}.csv", tde_run = DE_RUNS)
+shin_de = expand("data/diffexpr/shin/de_{sde_run}.csv", sde_run = DE_RUNS)
+burns_de = expand("data/diffexpr/burns/de_{bde_run}.csv", bde_run = DE_RUNS)
 
 rule all:
 	input:
@@ -21,8 +24,8 @@ rule all:
 		"figs/switchres/trapnell_5_switchres.png",
 		"figs/switchres/burns_5_switchres.png",
 		"figs/switchres/shin_5_switchres.png",
-		"figs/fdr.png"
-
+		"figs/fdr.png",
+		trapnell_de, shin_de, burns_de
 	
 
 rule trapnell_basic:
@@ -95,19 +98,20 @@ rule fig_switchres:
 		"Rscript analysis/figs/switchres/switchres.R"
 
 
+
 rule trapnell_diffexpr:
 	input:
 		sce = "data/sce_trapnell.Rdata",
 		traces = "data/trapnell_pseudotime_traces.h5",
 	output:
-		expand("data/diffexpr/trapnell/de_{de_run}.csv", de_run = de_runs)
+		"data/diffexpr/trapnell/de_{tde_run}.csv"
 	shell:
 		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output}"
 
 rule trapnell_fdr:
 	input:
 		traces = "data/trapnell_pseudotime_traces.h5",
-		de = "data/diffexpr/trapnell_de_traces.h5",
+		de = trapnell_de,
 		sce = "data/sce_trapnell.Rdata"
 	output:
 		plot_pdf = "figs/diffexpr/trapnell_plots.pdf",
@@ -120,7 +124,7 @@ rule shin_diffexpr:
 		sce = "data/sce_shin.Rdata",
 		traces = "data/shin_pseudotime_traces.h5"
 	output:
-		expand("data/diffexpr/shin/de_{de_run}.csv", de_run = de_runs)
+		"data/diffexpr/shin/de_{sde_run}.csv"
 	shell:
 		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output}"
 
@@ -128,7 +132,7 @@ rule shin_diffexpr:
 rule shin_fdr:
 	input:
 		traces = "data/shin_pseudotime_traces.h5",
-		de = "data/diffexpr/shin_de_traces.h5",
+		de = shin_de,
 		sce = "data/sce_shin.Rdata"
 	output:
 		plot_pdf = "figs/diffexpr/shin_plots.pdf",
@@ -142,14 +146,14 @@ rule burns_diffexpr:
 		sce = "data/sce_burns.Rdata",
 		traces = "data/burns_pseudotime_traces.h5",
 	output:
-		expand("data/diffexpr/burns/de_{de_run}.csv", de_run = de_runs)
+		"data/diffexpr/burns/de_{bde_run}.csv"
 	shell:
 		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output}"
 
 rule burns_fdr:
 	input:
 		traces = "data/burns_pseudotime_traces.h5",
-		de = "data/diffexpr/burns_de_traces.h5",
+		de = burns_de,
 		sce = "data/sce_burns.Rdata"
 	output:
 		plot_pdf = "figs/diffexpr/burns_plots.pdf",
@@ -162,8 +166,7 @@ rule make_fdr_plots:
 		"data/diffexpr/burns_fdr.csv",
 		"data/diffexpr/trapnell_fdr.csv",
 		"data/diffexpr/shin_fdr.csv",
-		"data/diffexpr/trapnell_de_traces.h5",
-		"data/trapnell_pseudotime_traces.h5",
+		trapnell_de, burns_de, shin_de,
 		"data/sce_trapnell.Rdata"
 	output:
 		"figs/fdr.png"
