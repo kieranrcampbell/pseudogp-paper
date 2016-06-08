@@ -180,9 +180,9 @@ all_plts <- lapply(seq_along(studies), function(i) {
 })
 
 
-for(i in to_do) {
-  base_name <- paste0(ns[i], "_5_switchres.png")
-  plt_name <- "figs/switchres"
+for(i in seq_along(studies)) {
+  base_name <- paste0(studies[i], "_5_switchres.png")
+  plt_name <- file.path("figs/switchres", base_name)
   plts <- all_plts[[i]]
 
   plts$actplt <- plts$actplt + theme(plot.margin = unit(c(1, 4, 1, 4), "cm")) + xlab("t0")

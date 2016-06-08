@@ -136,7 +136,7 @@ tplts <- lapply(1:length(post_tracefiles), function(i) {
 
 all_plots <- c(plts, tplts)
 ag <- cowplot::plot_grid(plotlist = all_plots, nrow = 2, labels = c("A", "B", "C", "D", "E", "F"))
-outfile <- file.path(base_dir, "figs/envelope/2_cloud.png")
+outfile <- "figs/envelope/2_cloud.png"
 ggsave(ag, filename = outfile, width=8.5, height=6, scale = 1.5)
 
 

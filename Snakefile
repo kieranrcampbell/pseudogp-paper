@@ -1,7 +1,10 @@
 import glob
 
-DE_RUNS = ["1x50", "51x100", "101x150", "151x200", "201x250", "251x300",
-			"301x350", "351x400", "401x450", "451x500"]
+#DE_RUNS = ["1x50", "51x100", "101x150", "151x200", "201x250", "251x300",
+#			"301x350", "351x400", "401x450", "451x500"]
+DE_RUNS = ["1x4"]
+
+RESAMPLES = [str(i) for i in range(1, 101)]
 
 studies = ["trapnell", "shin", "burns"]
 
@@ -12,6 +15,8 @@ sces = expand("data/sce_{study}.Rdata", study = studies)
 trapnell_de = expand("data/diffexpr/trapnell/de_{tde_run}.csv", tde_run = DE_RUNS)
 shin_de = expand("data/diffexpr/shin/de_{sde_run}.csv", sde_run = DE_RUNS)
 burns_de = expand("data/diffexpr/burns/de_{bde_run}.csv", bde_run = DE_RUNS)
+
+resample_traces = expand("data/resamples/gplvm_fits/fit_{resample}.Rdata", resample = RESAMPLES)
 
 rule all:
 	input:
@@ -25,7 +30,8 @@ rule all:
 		"figs/switchres/burns_5_switchres.png",
 		"figs/switchres/shin_5_switchres.png",
 		"figs/fdr.png",
-		trapnell_de, shin_de, burns_de
+		trapnell_de, shin_de, burns_de,
+		resample_traces
 	
 
 rule trapnell_basic:
@@ -173,5 +179,20 @@ rule make_fdr_plots:
 	shell:
 		"Rscript analysis/diffexpr/fdr_plots.R"
 
+rule resample_pca:
+	input:
+		"data/sce_trapnell.Rdata"
+	output:
+		"data/resamples/pca_resamples.Rdata"
+	shell:
+		"Rscript analysis/figs/resamples/0_create_resamples.R"
+
+rule resample_gplvm:
+	input:
+		"data/resamples/pca_resamples.Rdata"
+	output:
+		"data/resamples/gplvm_fits/fit_{resample}.Rdata"
+	shell:
+		"Rscript analysis/figs/resamples/1_fit_gplvm.R {resample}"
 
 
