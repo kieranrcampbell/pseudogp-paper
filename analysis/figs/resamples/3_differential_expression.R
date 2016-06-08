@@ -1,28 +1,22 @@
-
-#' We want to subset the SCESet to a computationally feasible number of cells
-#' 
-
 library(scater)
+library(embeddr)
+library(MCMCglmm)
+library(coda)
 
-set.seed(123)
+args <- commandArgs(trailingOnly = TRUE)
 
-load("data/sce_trapnell.Rdata")
+i <- as.numeric(args[1]) # which resample are we performing inference on?
 
-# First subset down to genes expressed in at least 10% of cells with
-# minimum mean expression of 0.1:
+load("data/resamples/sce_trapnell_resamples.Rdata")
 
-prop_cells_exprs <- rowMeans(exprs(sce) > 0)
+load(paste0("data/resamples/gplvm_fits/fit_", i, ".Rdata"))
+load("data/resamples/pca_resamples.Rdata")
 
-to_use <- prop_cells_exprs > 0.1 & rowMeans(exprs(sce)) > 0.1
+which_cells <- PCA_reps[[i]]$which_cells
 
-sce <- sce[which(to_use), ]
+sce <- sce[, which_cells]
+sce$pseudotime <- posterior.mode(mcmc(extract(fit, "t")$t))
+pvals <- pseudotime_test(sce, n_cores = 1)
 
-ngenes <- nrow(sce)
-
-to_de <- min(5000, ngenes)
-
-to_use <- sample(ngenes, to_de)
-
-sce <- sce[to_use, ]
-
-save(sce, file = "data/resamples/sce_trapnell_resamples.Rdata")
+csv_file <- paste0("data/resamples/diffexpr/pvals_",i,".csv")
+write_csv(pvals, csv_file)

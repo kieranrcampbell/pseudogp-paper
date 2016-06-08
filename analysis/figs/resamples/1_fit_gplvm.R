@@ -9,7 +9,7 @@ load("data/resamples/pca_resamples.Rdata")
 rs <- PCA_reps[[i]]
 X <- rs$pca
 
-fit <- fitPseudotime(X, "principal_curve", iter = 5000, thin = 5)
+fit <- fitPseudotime(X, "pca", smoothing_alpha = 10, smoothing_beta = 2, iter = 5000, thin = 5)
 
 pdf(paste0("data/resamples/diagnostic_plots/diagnostic_", i, ".pdf"), width = 7)
 plotDiagnostic(fit)

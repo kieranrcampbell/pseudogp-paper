@@ -1,10 +1,17 @@
 import glob
+import numpy as np
 
 #DE_RUNS = ["1x50", "51x100", "101x150", "151x200", "201x250", "251x300",
 #			"301x350", "351x400", "401x450", "451x500"]
-DE_RUNS = ["1x4"]
+DE_RUNS = ["1x4", "5x9"]
 
 RESAMPLES = [str(i) for i in range(1, 101)]
+
+resamples = np.arange(1, 101)
+resamples_failed_qc = np.array([2, 3, 7, 11, 20, 26, 41, 52, 55, 59, 82, 85, 86, 87, 94, 96])
+resamples_de = np.setdiff1d(resamples, resamples_failed_qc)
+resamples_de = np.random.choice(resamples_de, 50)
+RESAMPLES_DE = [str(i) for i in list(resamples_de)]
 
 studies = ["trapnell", "shin", "burns"]
 
@@ -17,6 +24,7 @@ shin_de = expand("data/diffexpr/shin/de_{sde_run}.csv", sde_run = DE_RUNS)
 burns_de = expand("data/diffexpr/burns/de_{bde_run}.csv", bde_run = DE_RUNS)
 
 resample_traces = expand("data/resamples/gplvm_fits/fit_{resample}.Rdata", resample = RESAMPLES)
+resample_de = expand("data/resamples/diffexpr/pvals_{de_resample}.csv", de_resample = RESAMPLES_DE)
 
 rule all:
 	input:
@@ -29,9 +37,10 @@ rule all:
 		"figs/switchres/trapnell_5_switchres.png",
 		"figs/switchres/burns_5_switchres.png",
 		"figs/switchres/shin_5_switchres.png",
-		"figs/fdr.png",
-		trapnell_de, shin_de, burns_de,
-		resample_traces
+		#"figs/fdr.png",
+		#trapnell_de, shin_de, burns_de,
+		resample_traces,
+		resample_de
 	
 
 rule trapnell_basic:
@@ -202,3 +211,13 @@ rule resample_choose_genes:
 		"data/resamples/sce_trapnell_resamples.Rdata"
 	shell:
 		"Rscript analysis/figs/resamples/2_choose_genes.R"
+
+rule resample_diffexpr:
+	input:
+		"data/resamples/sce_trapnell_resamples.Rdata",
+		"data/resamples/gplvm_fits/fit_{de_resample}.Rdata"
+	output:
+		"data/resamples/diffexpr/pvals_{de_resample}.csv"
+	shell:
+		"Rscript analysis/figs/resamples/3_differential_expression.R {de_resample}"
+
