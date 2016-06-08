@@ -2,7 +2,7 @@ import glob
 
 #DE_RUNS = ["1x50", "51x100", "101x150", "151x200", "201x250", "251x300",
 #			"301x350", "351x400", "401x450", "451x500"]
-DE_RUNS = ["1x4"]
+DE_RUNS = ["1x4", "5x9"]
 
 RESAMPLES = [str(i) for i in range(1, 101)]
 
@@ -26,10 +26,10 @@ rule all:
 		"figs/envelope/2_cloud.png",
 		"figs/postuncert/pu_density.png",
 		"figs/postuncert/3bcd_post_uncert.png",
-		"figs/switchres/trapnell_5_switchres.png",
-		"figs/switchres/burns_5_switchres.png",
-		"figs/switchres/shin_5_switchres.png",
-		"figs/fdr.png",
+		#"figs/switchres/trapnell_5_switchres.png",
+		#"figs/switchres/burns_5_switchres.png",
+		#"figs/switchres/shin_5_switchres.png",
+		#"figs/fdr.png",
 		trapnell_de, shin_de, burns_de,
 		resample_traces
 	
