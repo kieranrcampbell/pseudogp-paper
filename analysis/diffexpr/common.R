@@ -77,7 +77,7 @@ doDiffExprAnalysis <- function(sce, pst, start, end, output_csv) {
   }
 
   ss_pvals <- data.frame(ss_pvals)
-  names(ss_pvals) <- paste0(sample, seq_length(ncol(ss_pvals)))
+  names(ss_pvals) <- paste0(sample, seq_len(ncol(ss_pvals)))
   # switch_pvals <- data.frame(switch_pvals)
   ss_pvals$Gene <- featureNames(sce)
   
