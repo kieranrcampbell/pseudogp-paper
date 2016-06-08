@@ -1,1 +1,1 @@
-snakemake --jobs 40 --cluster "qsub -N pseudogp_paper -P webber.prjb -q long.qb -o logs -e logs -cwd -V"
+snakemake --jobs 40 --cluster "qsub -N pseudogp_paper -P webber.prja -q short.qa -o logs -e logs -cwd -V"

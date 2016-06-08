@@ -193,6 +193,6 @@ rule resample_gplvm:
 	output:
 		"data/resamples/gplvm_fits/fit_{resample}.Rdata"
 	shell:
-		"Rscript analysis/figs/resamples/1_fit_gplvm.R {resample}"
+		"Rscript analysis/figs/resamples/1_fit_gplvm.R {wildcards.resample}"
 
 
