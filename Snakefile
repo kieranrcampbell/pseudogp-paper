@@ -12,10 +12,10 @@ RESAMPLES = [str(i) for i in range(1, 101)]
 resamples = np.arange(1, 101)
 resamples_failed_qc = np.array([2, 3, 7, 11, 20, 26, 41, 52, 55, 59, 82, 85, 86, 87, 94, 96])
 resamples_de = np.setdiff1d(resamples, resamples_failed_qc)
-resamples_de = np.random.choice(resamples_de, 50) # which resampled PCAs do we take for diff expression?
+resamples_de = np.random.choice(resamples_de, 50, replace = False) # which resampled PCAs do we take for diff expression?
 RESAMPLES_DE = [str(i) for i in list(resamples_de)]
 
-TRACE_SAMPLES = [str(i) for i in list(np.random.choice(500, 50))]
+TRACE_SAMPLES = [str(i) for i in list(np.random.choice(500, 50, replace = False))]
 
 studies = ["trapnell", "shin", "burns"]
 
@@ -29,7 +29,9 @@ burns_de = expand("data/diffexpr/burns/de_{bde_run}.csv", bde_run = DE_RUNS)
 
 resample_traces = expand("data/resamples/gplvm_fits/fit_{resample}.Rdata", resample = RESAMPLES)
 resample_de = expand("data/resamples/diffexpr/pvals_{de_resample}.csv", de_resample = RESAMPLES_DE)
-trace_de = expand("data/resamples/trace_diffexpr/pvals_{trace}.csv", trace = TRACE_SAMPLES)
+
+trace_de = expand("data/resamples/trace_diffexpr/pvals_{trace_resample}_{trace}.csv", 
+					trace_resample = RESAMPLES_DE, trace = TRACE_SAMPLES)
 
 rule all:
 	input:
@@ -226,13 +228,20 @@ rule resample_diffexpr:
 	shell:
 		"Rscript analysis/figs/resamples/3_differential_expression.R {wildcards.de_resample}"
 
+rule resample_gplvm_gene_select:
+	input:
+		resample_de, "data/resamples/sce_trapnell_resamples.Rdata"
+	output:
+		"data/resamples/sce_trapnell_gplvm.Rdata"
+	shell:
+		"Rscript analysis/figs/resamples/4_genes_for_gplvm.R"
 
 rule trace_diffexpr:
 	input:
-		"data/resamples/sce_trapnell_resamples.Rdata",
-		"data/resamples/gplvm_fits/fit_1.Rdata"
+		"data/resamples/sce_trapnell_gplvm.Rdata",
+		resample_traces
 	output:
-		"data/resamples/trace_diffexpr/pvals_{trace}.csv"
+		"data/resamples/trace_diffexpr/pvals_{trace_resample}_{trace}.csv"
 	shell:
-		"Rscript analysis/figs/resamples/4_trace_de.R 1 {wildcards.trace}"
+		"Rscript analysis/figs/resamples/5_trace_de.R {wildcards.trace_resample} {wildcards.trace}"
 
