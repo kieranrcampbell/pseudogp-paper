@@ -234,5 +234,5 @@ rule trace_diffexpr:
 	output:
 		"data/resamples/trace_diffexpr/pvals_{trace}.csv"
 	shell:
-		"Rscript analysis/figs/resamples/4_trace_de.R {wildcards.trace}"
+		"Rscript analysis/figs/resamples/4_trace_de.R 1 {wildcards.trace}"
 

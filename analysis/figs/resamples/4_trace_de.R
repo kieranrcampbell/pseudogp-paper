@@ -7,6 +7,8 @@ library(readr)
 
 args <- commandArgs(trailingOnly = TRUE)
 
+stopifnot(length(args) == 2)
+
 i <- as.numeric(args[1]) # which resample are we performing inference on?
 j <- as.numeric(args[2]) # which posterior trace are we performing inference on?
 
@@ -22,5 +24,5 @@ extr <- extract(fit, "t")$t
 sce$pseudotime <- extr[j,]
 pvals <- pseudotime_test(sce, n_cores = 1)
 
-csv_file <- paste0("data/resamples/trace_diffexpr/pvals_",i,".csv")
+csv_file <- paste0("data/resamples/trace_diffexpr/pvals_",j ,".csv")
 write_csv(pvals, csv_file)
