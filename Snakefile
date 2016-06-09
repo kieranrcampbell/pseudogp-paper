@@ -1,6 +1,8 @@
 import glob
 import numpy as np
 
+np.random.seed(123)
+
 #DE_RUNS = ["1x50", "51x100", "101x150", "151x200", "201x250", "251x300",
 #			"301x350", "351x400", "401x450", "451x500"]
 DE_RUNS = ["1x4", "5x9"]
@@ -38,7 +40,7 @@ rule all:
 		"figs/switchres/burns_5_switchres.png",
 		"figs/switchres/shin_5_switchres.png",
 		#"figs/fdr.png",
-		#trapnell_de, shin_de, burns_de,
+		trapnell_de, shin_de, burns_de,
 		resample_traces,
 		resample_de
 	
@@ -219,5 +221,5 @@ rule resample_diffexpr:
 	output:
 		"data/resamples/diffexpr/pvals_{de_resample}.csv"
 	shell:
-		"Rscript analysis/figs/resamples/3_differential_expression.R {de_resample}"
+		"Rscript analysis/figs/resamples/3_differential_expression.R {wildcards.de_resample}"
 

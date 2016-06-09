@@ -2,6 +2,8 @@ library(scater)
 library(embeddr)
 library(MCMCglmm)
 library(coda)
+library(rstan)
+library(readr)
 
 args <- commandArgs(trailingOnly = TRUE)
 

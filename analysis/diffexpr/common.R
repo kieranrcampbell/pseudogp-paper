@@ -52,6 +52,8 @@ pvalsFromHDF5 <- function(h5file) {
 
 
 doDiffExprAnalysis <- function(sce, pst, start, end, output_csv) {
+  print(paste("Output csv:", output_csv))
+  
   ## subset to genes expressed in at lesat 10% of cells
   n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
   genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
@@ -77,12 +79,12 @@ doDiffExprAnalysis <- function(sce, pst, start, end, output_csv) {
   }
 
   ss_pvals <- data.frame(ss_pvals)
-  names(ss_pvals) <- paste0(sample, seq_len(ncol(ss_pvals)))
+  names(ss_pvals) <- paste0("sample", seq_len(ncol(ss_pvals)))
   # switch_pvals <- data.frame(switch_pvals)
   ss_pvals$Gene <- featureNames(sce)
   
   dfp <- melt(ss_pvals, id.vars = "Gene", variable.name = "Sample", value.name = "Pval")
-  
+    
   ## write results
   # if(!file.exists(h5outputfile)) h5createFile(h5outputfile)
   # h5createGroup(h5outputfile, "ss")

@@ -6,12 +6,13 @@ library(devtools)
 library(scater)
 library(embeddr)
 library(switchde)
+library(readr)
 
 source("analysis/diffexpr/common.R")
 
 start <- NULL
 end <- NULL
-tracefile <- csv_file <- sce_file <- statusfile <- NULL
+tracefile <- csv_file <- sce_file <- NULL
 
 args <- commandArgs(trailingOnly = TRUE)
 print(args)
@@ -32,7 +33,7 @@ if(length(args) > 0) {
 # Load pseudotime assignments ------
 if(!require(rhdf5)) stop("Need some hdf5 love")
 
-print(paste("Performing differential expression analysis with start end", start, end))
+print(paste("Performing differential expression analysis with start end", start, end, "with csv file", csv_file))
 
 pst <- h5read(tracefile, "pst")
 
@@ -44,7 +45,4 @@ stopifnot(start > 0 && end > 0 && start < nrow(pst) && end < nrow(pst) && start 
 
 doDiffExprAnalysis(sce, pst, start, end, csv_file)
 
-conn <- file(statusfile)
-writeLines("Finished", conn)
-close(conn)
 
