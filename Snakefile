@@ -12,8 +12,10 @@ RESAMPLES = [str(i) for i in range(1, 101)]
 resamples = np.arange(1, 101)
 resamples_failed_qc = np.array([2, 3, 7, 11, 20, 26, 41, 52, 55, 59, 82, 85, 86, 87, 94, 96])
 resamples_de = np.setdiff1d(resamples, resamples_failed_qc)
-resamples_de = np.random.choice(resamples_de, 50)
+resamples_de = np.random.choice(resamples_de, 50) # which resampled PCAs do we take for diff expression?
 RESAMPLES_DE = [str(i) for i in list(resamples_de)]
+
+TRACE_SAMPLES = [str(i) for i in list(np.random.choice(500, 50))]
 
 studies = ["trapnell", "shin", "burns"]
 
@@ -27,6 +29,7 @@ burns_de = expand("data/diffexpr/burns/de_{bde_run}.csv", bde_run = DE_RUNS)
 
 resample_traces = expand("data/resamples/gplvm_fits/fit_{resample}.Rdata", resample = RESAMPLES)
 resample_de = expand("data/resamples/diffexpr/pvals_{de_resample}.csv", de_resample = RESAMPLES_DE)
+trace_de = expand("data/resamples/trace_diffexpr/pvals_{trace}.csv", trace = TRACE_SAMPLES)
 
 rule all:
 	input:
@@ -40,9 +43,9 @@ rule all:
 		"figs/switchres/burns_5_switchres.png",
 		"figs/switchres/shin_5_switchres.png",
 		#"figs/fdr.png",
-		trapnell_de, shin_de, burns_de,
+		#trapnell_de, shin_de, burns_de,
 		resample_traces,
-		resample_de
+		resample_de, trace_de
 	
 
 rule trapnell_basic:
@@ -222,4 +225,14 @@ rule resample_diffexpr:
 		"data/resamples/diffexpr/pvals_{de_resample}.csv"
 	shell:
 		"Rscript analysis/figs/resamples/3_differential_expression.R {wildcards.de_resample}"
+
+
+rule trace_diffexpr:
+	input:
+		"data/resamples/sce_trapnell_resamples.Rdata",
+		"data/resamples/gplvm_fits/fit_1.Rdata"
+	output:
+		"data/resamples/trace_diffexpr/pvals_{trace}.csv"
+	shell:
+		"Rscript analysis/figs/resamples/4_trace_de.R {wildcards.trace}"
 
