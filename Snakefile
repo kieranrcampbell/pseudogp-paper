@@ -239,7 +239,7 @@ rule resample_gplvm_gene_select:
 rule trace_diffexpr:
 	input:
 		"data/resamples/sce_trapnell_gplvm.Rdata",
-		resample_traces
+		"data/resamples/gplvm_fits/fit_{trace_resample}.Rdata"
 	output:
 		"data/resamples/trace_diffexpr/pvals_{trace_resample}_{trace}.csv"
 	shell:

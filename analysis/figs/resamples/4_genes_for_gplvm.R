@@ -1,13 +1,9 @@
 library(scater)
-library(embeddr)
-library(MCMCglmm)
-library(coda)
-library(rstan)
 library(readr)
 library(dplyr)
 library(matrixStats)
 library(reshape2)
-library(sampling)
+library(caret)
 
 set.seed(123L)
 
