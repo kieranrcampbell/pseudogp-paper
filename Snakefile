@@ -3,9 +3,8 @@ import numpy as np
 
 np.random.seed(123)
 
-#DE_RUNS = ["1x50", "51x100", "101x150", "151x200", "201x250", "251x300",
-#			"301x350", "351x400", "401x450", "451x500"]
-DE_RUNS = ["1x4", "5x9"]
+DE_RUNS = [str(i) for i in range(1, 501)]
+
 
 RESAMPLES = [str(i) for i in range(1, 101)]
 
@@ -45,9 +44,9 @@ rule all:
 		"figs/switchres/burns_5_switchres.png",
 		"figs/switchres/shin_5_switchres.png",
 		#"figs/fdr.png",
-		#trapnell_de, shin_de, burns_de,
-		resample_traces,
-		resample_de, trace_de
+		trapnell_de, shin_de, burns_de,
+		resample_traces#,
+		#resample_de, trace_de
 	
 
 rule trapnell_basic:
@@ -120,7 +119,6 @@ rule fig_switchres:
 		"Rscript analysis/figs/switchres/switchres.R"
 
 
-
 rule trapnell_diffexpr:
 	input:
 		sce = "data/sce_trapnell.Rdata",
@@ -128,7 +126,7 @@ rule trapnell_diffexpr:
 	output:
 		"data/diffexpr/trapnell/de_{tde_run}.csv"
 	shell:
-		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output}"
+		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {wildcards.tde_run} {output}"
 
 rule trapnell_fdr:
 	input:
@@ -148,7 +146,7 @@ rule shin_diffexpr:
 	output:
 		"data/diffexpr/shin/de_{sde_run}.csv"
 	shell:
-		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output}"
+		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {wildcards.sde_run} {output}"
 
 
 rule shin_fdr:
@@ -170,7 +168,7 @@ rule burns_diffexpr:
 	output:
 		"data/diffexpr/burns/de_{bde_run}.csv"
 	shell:
-		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {output}"
+		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {wildcards.bde_run} {output}"
 
 rule burns_fdr:
 	input:
