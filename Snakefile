@@ -169,6 +169,15 @@ rule map_de:
 	shell:
 		"Rscript analysis/diffexpr/2_map_estimates.R {wildcards.map_study} {output}"
 
+rule fdr_calc:
+	input:
+		"data/diffexpr/agg_pvals/{study}.csv",
+		"data/diffexpr/map/{map_study}.csv"
+	output:
+		"data/diffexpr/{study}_fdr.csv"
+	shell:
+		"Rscript analysis/diffexpr/3_fdr_calculation.R {wildcards.study} {output}"
+
 
 
 
