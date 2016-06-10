@@ -32,6 +32,9 @@ resample_de = expand("data/resamples/diffexpr/pvals_{de_resample}.csv", de_resam
 trace_de = expand("data/resamples/trace_diffexpr/pvals_{trace_resample}_{trace}.csv", 
 					trace_resample = RESAMPLES_DE, trace = TRACE_SAMPLES)
 
+de_agg = expand("data/diffexpr/{study}.csv", study = studies)
+de_map = expand("data/diffexpr/{study}_map.csv", study = studies)
+
 rule all:
 	input:
 		pst_traces,
@@ -44,9 +47,10 @@ rule all:
 		"figs/switchres/burns_5_switchres.png",
 		"figs/switchres/shin_5_switchres.png",
 		#"figs/fdr.png"#,
-		#trapnell_de, shin_de, burns_de,
+		trapnell_de, shin_de, burns_de,
 		resample_traces,
-		resample_de, trace_de
+		resample_de, trace_de,
+		de_agg
 	
 
 rule trapnell_basic:
@@ -128,16 +132,6 @@ rule trapnell_diffexpr:
 	shell:
 		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {wildcards.tde_run} {output}"
 
-rule trapnell_fdr:
-	input:
-		traces = "data/trapnell_pseudotime_traces.h5",
-		de = trapnell_de,
-		sce = "data/sce_trapnell.Rdata"
-	output:
-		plot_pdf = "figs/diffexpr/trapnell_plots.pdf",
-		fdr_csv = "data/diffexpr/trapnell_fdr.csv"
-	shell:
-		"Rscript analysis/diffexpr/1_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
 
 rule shin_diffexpr:
 	input:
@@ -149,17 +143,6 @@ rule shin_diffexpr:
 		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {wildcards.sde_run} {output}"
 
 
-rule shin_fdr:
-	input:
-		traces = "data/shin_pseudotime_traces.h5",
-		de = shin_de,
-		sce = "data/sce_shin.Rdata"
-	output:
-		plot_pdf = "figs/diffexpr/shin_plots.pdf",
-		fdr_csv = "data/diffexpr/shin_fdr.csv"
-	shell:
-		"Rscript analysis/diffexpr/1_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
-
 
 rule burns_diffexpr:
 	input:
@@ -170,28 +153,24 @@ rule burns_diffexpr:
 	shell:
 		"Rscript analysis/diffexpr/0_diffexpr_analysis.R {input.traces} {input.sce} {wildcards.bde_run} {output}"
 
-rule burns_fdr:
+rule aggregate_de:
 	input:
-		traces = "data/burns_pseudotime_traces.h5",
-		de = burns_de,
-		sce = "data/sce_burns.Rdata"
+		trapnell_de, shin_de, burns_de
 	output:
-		plot_pdf = "figs/diffexpr/burns_plots.pdf",
-		fdr_csv = "data/diffexpr/burns_fdr.csv"
+		"data/diffexpr/{study}.csv"
 	shell:
-		"Rscript analysis/diffexpr/1_fdr_calculation.R {input.traces} {input.de} {input.sce} {output.plot_pdf} {output.fdr_csv}"
+		"Rscript analysis/diffexpr/1_aggregate.R {study}"
 
-rule make_fdr_plots:
+rule map_de:
 	input:
-		"data/diffexpr/burns_fdr.csv",
-		"data/diffexpr/trapnell_fdr.csv",
-		"data/diffexpr/shin_fdr.csv",
-		trapnell_de, burns_de, shin_de,
-		"data/sce_trapnell.Rdata"
+		sces, pst_traces
 	output:
-		"figs/fdr.png"
+		"data/diffexpr/{study}_map.csv"
 	shell:
-		"Rscript analysis/diffexpr/fdr_plots.R"
+		"Rscript analysis/diffexpr/2_map_estimates.R {study} {output}"
+
+
+
 
 rule resample_pca:
 	input:
