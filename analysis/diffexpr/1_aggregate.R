@@ -4,6 +4,7 @@ library(dplyr)
 args <- commandArgs(trailingOnly = TRUE)
 
 study <- args[1]
+csv_output <- args[2]
 
 stopifnot(study %in% c("trapnell", "burns", "shin"))
 
@@ -18,5 +19,4 @@ qvals <- lapply(csv_files, function(f) {
 
 qval_df <- do.call(rbind, qvals)
 
-csv_output <- paste0("data/diffexpr/", study, ".csv")
 write_csv(qval_df, csv_output)

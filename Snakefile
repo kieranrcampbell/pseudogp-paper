@@ -32,8 +32,8 @@ resample_de = expand("data/resamples/diffexpr/pvals_{de_resample}.csv", de_resam
 trace_de = expand("data/resamples/trace_diffexpr/pvals_{trace_resample}_{trace}.csv", 
 					trace_resample = RESAMPLES_DE, trace = TRACE_SAMPLES)
 
-de_agg = expand("data/diffexpr/{study}.csv", study = studies)
-de_map = expand("data/diffexpr/{study}_map.csv", study = studies)
+de_agg = expand("data/diffexpr/agg_pvals/{study}.csv", study = studies)
+de_map = expand("data/diffexpr/map/{map_study}.csv", map_study = studies)
 
 rule all:
 	input:
@@ -50,7 +50,7 @@ rule all:
 		trapnell_de, shin_de, burns_de,
 		resample_traces,
 		resample_de, trace_de,
-		de_agg
+		de_agg, de_map
 	
 
 rule trapnell_basic:
@@ -157,17 +157,17 @@ rule aggregate_de:
 	input:
 		trapnell_de, shin_de, burns_de
 	output:
-		"data/diffexpr/{study}.csv"
+		"data/diffexpr/agg_pvals/{study}.csv"
 	shell:
-		"Rscript analysis/diffexpr/1_aggregate.R {study}"
+		"Rscript analysis/diffexpr/1_aggregate.R {wildcards.study} {output}"
 
 rule map_de:
 	input:
 		sces, pst_traces
 	output:
-		"data/diffexpr/{study}_map.csv"
+		"data/diffexpr/map/{map_study}.csv"
 	shell:
-		"Rscript analysis/diffexpr/2_map_estimates.R {study} {output}"
+		"Rscript analysis/diffexpr/2_map_estimates.R {wildcards.map_study} {output}"
 
 
 

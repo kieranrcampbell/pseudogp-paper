@@ -15,7 +15,7 @@ csv_file <- args[2]
 stopifnot(study %in% c("trapnell", "burns", "shin"))
 
 tracefile <- paste0("data/", study, "_pseudotime_traces.h5")
-scefile <- paste0("data/sce_", study, ".Rdata")
+sce_file <- paste0("data/sce_", study, ".Rdata")
 
 
 # Load pseudotime assignments ------
