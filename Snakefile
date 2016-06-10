@@ -34,6 +34,7 @@ trace_de = expand("data/resamples/trace_diffexpr/pvals_{trace_resample}_{trace}.
 
 de_agg = expand("data/diffexpr/agg_pvals/{study}.csv", study = studies)
 de_map = expand("data/diffexpr/map/{map_study}.csv", map_study = studies)
+fdr_csv = expand("data/diffexpr/{fdr_study}_fdr.csv", fdr_study = studies)
 
 rule all:
 	input:
@@ -50,7 +51,8 @@ rule all:
 		trapnell_de, shin_de, burns_de,
 		resample_traces,
 		resample_de, trace_de,
-		de_agg, de_map
+		de_agg, de_map,
+		fdr_csv
 	
 
 rule trapnell_basic:
@@ -171,12 +173,11 @@ rule map_de:
 
 rule fdr_calc:
 	input:
-		"data/diffexpr/agg_pvals/{study}.csv",
-		"data/diffexpr/map/{map_study}.csv"
+		de_agg, de_map
 	output:
-		"data/diffexpr/{study}_fdr.csv"
+		"data/diffexpr/{fdr_study}_fdr.csv"
 	shell:
-		"Rscript analysis/diffexpr/3_fdr_calculation.R {wildcards.study} {output}"
+		"Rscript analysis/diffexpr/3_fdr_calculation.R {wildcards.fdr_study} {output}"
 
 
 

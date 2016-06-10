@@ -2,12 +2,10 @@
 # Differential expression comparison for uncertainty in pseudotime
 # kieran.campbell@sjc.ox.ac.uk
 
-library(scater)
-library(embeddr)
+library(ggplot2)
 library(readr)
-library(MCMCglmm)
-library(coda)
-library(rhdf5)
+library(magrittr)
+library(dplyr)
 
 alpha <- 0.05
 
@@ -27,8 +25,28 @@ prop_sig <- ap %>% group_by(gene) %>%
 
 sig_df <- inner_join(mapp, prop_sig, by = "gene")
 
-ggplot(sig_df, aes(x = q_val, y = prop_sig)) + geom_point()
 
-sig_df %<>% mutate(false_disc = q_val < alpha & prop_sig < (1 - alpha))
+designate <- function(qval, prop_sig) {
+  if(qval < alpha & prop_sig >= (1 - alpha)) {
+    return("True positive")
+  } else if(qval < alpha & prop_sig < (1 - alpha)) {
+    return("False positive")
+  } else if(qval > alpha & prop_sig < (1 - alpha)) {
+    return("True negative") 
+  } else {
+    return("False negative")
+  }
+}
 
-print(paste("False discovery rate for study", study, "is", mean(sig_df$false_disc)))
+discovery_types <- sig_df %>%
+  select(q_val, prop_sig) %>%
+  apply(1, function(row) designate(row[1], row[2]))
+
+sig_df %<>% mutate(discovery_type = discovery_types)
+
+num_fp <- sum(sig_df$discovery_type == "False positive")
+num_tp <- sum(sig_df$discovery_type == "True positive")
+
+fpr <- num_fp / (num_fp + num_tp)
+
+print(paste("False discovery ratio for study", study, "is", fpr))
