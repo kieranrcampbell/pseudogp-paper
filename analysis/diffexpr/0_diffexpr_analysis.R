@@ -34,9 +34,6 @@ pst <- h5read(tracefile, "pst")
 load(sce_file)
 sce@lowerDetectionLimit <- 0.1
 
-## sanity checking
-stopifnot(start > 0 && end > 0 && start < nrow(pst) && end < nrow(pst) && start < end)
-
 
 ## subset to genes expressed in at lesat 10% of cells
 n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
@@ -48,6 +45,6 @@ sce$pseudotime <- pst[trace,]
 
 
 ss_test <- pseudotime_test(sce, n_cores = 1)
-write_csv(ss_test, output_csv)
+write_csv(ss_test, csv_file)
 
 

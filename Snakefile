@@ -43,10 +43,10 @@ rule all:
 		"figs/switchres/trapnell_5_switchres.png",
 		"figs/switchres/burns_5_switchres.png",
 		"figs/switchres/shin_5_switchres.png",
-		#"figs/fdr.png",
-		trapnell_de, shin_de, burns_de,
-		resample_traces#,
-		#resample_de, trace_de
+		#"figs/fdr.png"#,
+		#trapnell_de, shin_de, burns_de,
+		resample_traces,
+		resample_de, trace_de
 	
 
 rule trapnell_basic:
