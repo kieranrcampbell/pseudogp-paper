@@ -5,9 +5,11 @@
 library(ggplot2)
 library(readr)
 library(magrittr)
+library(magrittr)
+library(ggplot2)
 library(dplyr)
 
-alpha <- 0.05
+alpha <- 0.05 # significance level
 
 args <- commandArgs(trailingOnly = TRUE)
 study <- args[1]
@@ -24,7 +26,6 @@ prop_sig <- ap %>% group_by(gene) %>%
   summarise(prop_sig = mean(q_val < alpha))
 
 sig_df <- inner_join(mapp, prop_sig, by = "gene")
-
 
 designate <- function(qval, prop_sig) {
   if(qval < alpha & prop_sig >= (1 - alpha)) {
@@ -49,4 +50,3 @@ num_tp <- sum(sig_df$discovery_type == "True positive")
 
 fpr <- num_fp / (num_fp + num_tp)
 
-print(paste("False discovery ratio for study", study, "is", fpr))
