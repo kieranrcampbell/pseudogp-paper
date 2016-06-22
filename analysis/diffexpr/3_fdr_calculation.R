@@ -58,7 +58,7 @@ study_list <- lapply(studies, read_studies)
 sig_df <- do.call(rbind, study_list)
 write_csv(sig_df, "data/diffexpr/all_pvals.csv")
 
-
+sig_df <- read_csv("data/diffexpr/all_pvals.csv")
 fd_df <- sig_df %>%
   group_by(study) %>%
   summarise(n_fp = sum(discovery_type == "False positive"),
@@ -67,7 +67,7 @@ fd_df <- sig_df %>%
   mutate(FDR = n_fp / (n_fp + n_tn))
 
 
-ggplot(sig_df, aes(x = percent_sig, y = q_val, fill = discovery_type)) +
+allgene_plt <- ggplot(sig_df, aes(x = percent_sig, y = q_val, fill = discovery_type)) +
   geom_point(alpha = 0.5, shape = 21, color = 'black', size = 2.3) +
   cowplot::theme_cowplot() +
   scale_fill_brewer(name = element_blank(), palette = "Set1") +
@@ -89,18 +89,22 @@ f <- fd_df %>%
 f$measure <- plyr::mapvalues(f$measure, from = c("n_fp", "n_tp"),
                              to = c("False positive", "True positive"))
 
-ggplot(f, aes(x = measure, y = number, fill = measure)) + 
+de_gene_nums <- ggplot(f, aes(x = measure, y = number, fill = measure)) + 
   geom_bar(stat = "identity") +
   facet_wrap(~ study) +
   cowplot::theme_cowplot() +
   scale_fill_brewer(name = element_blank(), palette = "Set1") +
   theme(legend.position = "none", axis.title.x = element_blank(),
         axis.text.x = element_text(angle = 45, vjust = 0.8, size = 10, hjust = 0.8)) +
-  ylab("Number")
+  ylab("Number of DE genes")
 
-ggplot(fd_df, aes(x = study, y = FDR)) + geom_bar(stat = "identity") +
+fdr_plt <- ggplot(fd_df, aes(x = study, y = FDR, fill = study)) + geom_bar(stat = "identity") +
   coord_flip() + cowplot::theme_cowplot() +
-  xlab("Study") + ylab("False discovery rate")
+  xlab("Study") + ylab("False discovery rate") +
+  scale_fill_brewer(name = element_blank(), palette = "Set1") +
+  theme(legend.position = "none")
 
-
+ggsave(plot = allgene_plt, filename = "figs/diffexpr/all_genes.png", width = 6, height = 4)
+ggsave(plot = de_gene_nums, filename = "figs/diffexpr/de_gene_nums.png", width = 6, height = 4)
+ggsave(plot = fdr_plt, filename = "figs/diffexpr/fdr.png", width = 6, height = 4)
 
