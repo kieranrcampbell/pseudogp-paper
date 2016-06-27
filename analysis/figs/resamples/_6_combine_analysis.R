@@ -4,10 +4,13 @@ library(matrixStats)
 library(reshape2)
 library(magrittr)
 library(tidyr)
+library(ggplot2)
 
 theme_set(theme_bw())
 
 d <- "data/resamples/trace_diffexpr"
+
+alpha <- 0.05
 
 files <- dir(d)
 
@@ -21,10 +24,18 @@ resample_qvals <- lapply(files, function(f) {
 })
 
 rq <- do.call(rbind, resample_qvals)
+rm(resample_qvals)
 
-r <- filter(rq, gene == "ENSG00000120798.11")
+all_pvals <- read_csv("data/diffexpr/all_pvals.csv")
 
-ggplot(r, aes(x = trace, y = rep, colour = log(q_val))) + geom_point()
+tp_genes <- filter(all_pvals, discovery_type == "True positive", study == "trapnell")
+r2 <- filter(rq, gene %in% tp_genes$gene)
+
+r2m <- r2 %>%
+  group_by(gene) %>%
+  summarise(prop_sig = mean(q_val < alpha))
+
+
 
 by_trace <- group_by(rq, trace) %>%
   summarise(Variance = var((q_val)))

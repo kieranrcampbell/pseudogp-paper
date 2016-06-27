@@ -1,3 +1,9 @@
+#' This script produces reduced dimension representations of 
+#' the Trapnell et al dataset. Currently uses PCA with 80%
+#' of cells subsampled.
+#' 
+#' We also save a full-cell representation too.
+
 library(scater)
 
 set.seed(123L)
@@ -17,3 +23,6 @@ PCA_reps <- lapply(seq_len(n_resamples), function(i) {
 })
 
 save(PCA_reps, file = "data/resamples/pca_resamples.Rdata")
+
+pca_all <- redDim(plotPCA(sce, return_SCESet = TRUE))[, 1:2]
+save(pca_all, file = "data/resamples/pca_all.Rdata")

@@ -1,3 +1,5 @@
+#' Performs differential gene testing for a given cell in a given representation
+
 library(scater)
 library(embeddr)
 library(MCMCglmm)

@@ -16,9 +16,11 @@ sig_df <- read_csv("data/diffexpr/all_pvals.csv")
 do_go_enrichment <- function(t_df, genome, id) {
   t_df <- mutate(t_df, signif_map = q_val < alpha, 
                  signif_gplvm = prop_sig > (1 - alpha))
+  t_df <- mutate(t_df, map_only = signif_map & !signif_gplvm)
 
   genes <- data.frame(map = as.integer(t_df$signif_map),
-                      gplvm = as.integer(t_df$signif_gplvm))
+                      gplvm = as.integer(t_df$signif_gplvm),
+                      map_only = as.integer(t_df$map_only))
   rownames(genes) <- t_df$gene
   
   do_goseq <- function(genes, genome = "hg19", id = "ensGene", test.cats = "GO:BP") {
@@ -29,14 +31,12 @@ do_go_enrichment <- function(t_df, genome, id) {
   }
   
   go_results <- apply(genes, 2, do_goseq, genome, id)
+  gres <- Map(function(df, name) {
+    mutate(df, etype = name)
+  }, go_results, names(genes))
+  gres <- do.call(rbind, gres) %>% tbl_df()
   
-  results <- inner_join(go_results$map, go_results$gplvm, 
-                   by = c("category", "term", "ontology"))  %>%
-    dplyr::select(-starts_with("over_represented"), -starts_with("under_represented"), -starts_with("num")) %>%
-    rename(qval_map = qval.x, qval_gplvm = qval.y) %>%
-    mutate(signif_map = qval_map < alpha, signif_gplvm = qval_gplvm < alpha) %>% tbl_df()
-
-  return(results)
+  return(gres)
 }
 
 
@@ -73,4 +73,3 @@ go_burns <- mutate(go_burns, study = "burns")
 go <- rbind(go_trapnell, go_shin, go_burns)
 
 write_csv(go, "data/diffexpr/go_no_direction.csv")
-

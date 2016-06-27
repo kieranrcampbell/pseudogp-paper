@@ -14,7 +14,7 @@ resamples_de = np.setdiff1d(resamples, resamples_failed_qc)
 resamples_de = np.random.choice(resamples_de, 50, replace = False) # which resampled PCAs do we take for diff expression?
 RESAMPLES_DE = [str(i) for i in list(resamples_de)]
 
-TRACE_SAMPLES = [str(i) for i in list(np.random.choice(500, 50, replace = False))]
+TRACE_SAMPLES = [str(i) for i in list(np.random.choice(500, 100, replace = False))]
 
 studies = ["trapnell", "shin", "burns"]
 
@@ -25,6 +25,9 @@ sces = expand("data/sce_{study}.Rdata", study = studies)
 trapnell_de = expand("data/diffexpr/trapnell/de_{tde_run}.csv", tde_run = DE_RUNS)
 shin_de = expand("data/diffexpr/shin/de_{sde_run}.csv", sde_run = DE_RUNS)
 burns_de = expand("data/diffexpr/burns/de_{bde_run}.csv", bde_run = DE_RUNS)
+
+resample_all_cell_pvals = expand("data/resamples/all_cell_diffexpr/pvals_{posterior_trace}.csv", posterior_trace = TRACE_SAMPLES)
+
 
 resample_traces = expand("data/resamples/gplvm_fits/fit_{resample}.Rdata", resample = RESAMPLES)
 resample_de = expand("data/resamples/diffexpr/pvals_{de_resample}.csv", de_resample = RESAMPLES_DE)
@@ -179,17 +182,16 @@ rule fdr_calc:
 	shell:
 		"Rscript analysis/diffexpr/3_fdr_calculation.R {wildcards.fdr_study} {output}"
 
-
-
-
+# Create PCA representations of 80% subsamples & for all cells
 rule resample_pca:
 	input:
 		"data/sce_trapnell.Rdata"
 	output:
-		"data/resamples/pca_resamples.Rdata"
+		"data/resamples/pca_resamples.Rdata", "data/resamples/pca_all.Rdata"
 	shell:
 		"Rscript analysis/figs/resamples/0_create_resamples.R"
 
+# Fit GPLVMs for each PCA resample
 rule resample_gplvm:
 	input:
 		"data/resamples/pca_resamples.Rdata"
@@ -198,6 +200,28 @@ rule resample_gplvm:
 	shell:
 		"Rscript analysis/figs/resamples/1_fit_gplvm.R {wildcards.resample}"
 
+# Fit GPLVM for all-cell PCA
+rule resample_gplvm_all:
+	input:
+		"data/resamples/pca_all.Rdata"
+	output:
+		"data/resamples/gplvm_fit_all.Rdata"
+	shell:
+		"Rscript analysis/figs/resamples/2_fit_gplvm_all.R"
+
+
+# Perform DE across traces for the all-cell PCA
+rule resample_all_diffexpr:
+	input:
+		"data/resamples/gplvm_fit_all.Rdata", "data/sce_trapnell.Rdata",
+		"data/resamples/pca_all.Rdata"
+	output:
+		"data/resamples/all_cell_diffexpr/pvals_{posterior_trace}.csv"
+	shell:
+		"Rscript 3_de_allcells.R {wildcards.posterior_trace}"
+
+
+"""
 rule resample_choose_genes:
 	input:
 		"data/sce_trapnell.Rdata"
@@ -231,4 +255,6 @@ rule trace_diffexpr:
 		"data/resamples/trace_diffexpr/pvals_{trace_resample}_{trace}.csv"
 	shell:
 		"Rscript analysis/figs/resamples/5_trace_de.R {wildcards.trace_resample} {wildcards.trace}"
+
+"""
 

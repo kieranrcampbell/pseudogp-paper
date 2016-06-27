@@ -1,6 +1,5 @@
-
-#' We want to subset the SCESet to a computationally feasible number of cells
-#' 
+#' This function selects the genes to use for differential expression testing.
+#' Currently uses all those robustly DE at the MAP estimate.
 
 library(scater)
 
