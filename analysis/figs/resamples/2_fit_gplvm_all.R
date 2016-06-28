@@ -12,10 +12,10 @@ X <- pca_all
 
 
 fit <- fitPseudotime(X, "pca", iter = 5000, thin = 5,
-                    smoothing_alpha = 12, smoothing_beta = 2)
+                    smoothing_alpha = 16, smoothing_beta = 2)
 
 
-pdf(paste0("data/resamples/diagnostic_plots/diagnostic_", i, ".pdf"), width = 7)
+pdf("data/resamples/diagnostic_plots/diagnostic_all.pdf", width = 7)
 plotDiagnostic(fit)
 posteriorCurvePlot(X, fit)
 dev.off()

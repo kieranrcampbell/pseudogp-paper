@@ -16,7 +16,7 @@ i <- as.numeric(args[1]) # which posterior trace are we performing inference on?
 load("data/sce_trapnell.Rdata")
 
 load("data/resamples/gplvm_fit_all.Rdata")
-load("data/resamples/pca_resamples.Rdata")
+#load("data/resamples/pca_resamples.Rdata")
 
 n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
 genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells

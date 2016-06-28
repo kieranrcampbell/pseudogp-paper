@@ -26,7 +26,7 @@ trapnell_de = expand("data/diffexpr/trapnell/de_{tde_run}.csv", tde_run = DE_RUN
 shin_de = expand("data/diffexpr/shin/de_{sde_run}.csv", sde_run = DE_RUNS)
 burns_de = expand("data/diffexpr/burns/de_{bde_run}.csv", bde_run = DE_RUNS)
 
-resample_all_cell_pvals = expand("data/resamples/all_cell_diffexpr/pvals_{posterior_trace}.csv", posterior_trace = TRACE_SAMPLES)
+resample_all_cell_pvals = expand("data/resamples/all_cells_diffexpr/pvals_{posterior_trace}.csv", posterior_trace = TRACE_SAMPLES)
 
 
 resample_traces = expand("data/resamples/gplvm_fits/fit_{resample}.Rdata", resample = RESAMPLES)
@@ -52,11 +52,14 @@ rule all:
 		"figs/switchres/shin_5_switchres.png",
 		#"figs/fdr.png"#,
 		trapnell_de, shin_de, burns_de,
+		resample_all_cell_pvals
+
+"""
 		resample_traces,
 		resample_de, trace_de,
 		de_agg, de_map,
 		fdr_csv
-	
+"""	
 
 rule trapnell_basic:
 	output:
@@ -216,9 +219,9 @@ rule resample_all_diffexpr:
 		"data/resamples/gplvm_fit_all.Rdata", "data/sce_trapnell.Rdata",
 		"data/resamples/pca_all.Rdata"
 	output:
-		"data/resamples/all_cell_diffexpr/pvals_{posterior_trace}.csv"
+		"data/resamples/all_cells_diffexpr/pvals_{posterior_trace}.csv"
 	shell:
-		"Rscript 3_de_allcells.R {wildcards.posterior_trace}"
+		"Rscript analysis/figs/resamples/3_de_allcells.R {wildcards.posterior_trace}"
 
 
 """
