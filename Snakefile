@@ -223,6 +223,26 @@ rule resample_all_diffexpr:
 	shell:
 		"Rscript analysis/figs/resamples/3_de_allcells.R {wildcards.posterior_trace}"
 
+# Use only robustly DE genes at all-cell estimate for subsample differential expression
+rule resample_create_robust_sce:
+	input:
+		"data/resamples/all_cells_diffexpr/pvals_{posterior_trace}.csv"
+	output:
+		"data/resamples/sce_trapnell_robust.Rdata"
+	shell:
+		"Rscript analysis/figs/resamples/4_create_robust_sceset.R"
+
+# Differential expression across all subsamples
+rule trace_diffexpr:
+	input:
+		"data/resamples/sce_trapnell_robust.Rdata",
+		"data/resamples/gplvm_fits/fit_{trace_resample}.Rdata",
+		"data/resamples/pca_resamples.Rdata"
+	output:
+		"data/resamples/trace_diffexpr/pvals_{trace_resample}_{trace}.csv"
+	shell:
+		"Rscript analysis/figs/resamples/5_trace_de.R {wildcards.trace_resample} {wildcards.trace}"
+
 
 """
 rule resample_choose_genes:
@@ -250,14 +270,7 @@ rule resample_gplvm_gene_select:
 	shell:
 		"Rscript analysis/figs/resamples/4_genes_for_gplvm.R"
 
-rule trace_diffexpr:
-	input:
-		"data/resamples/sce_trapnell_gplvm.Rdata",
-		"data/resamples/gplvm_fits/fit_{trace_resample}.Rdata"
-	output:
-		"data/resamples/trace_diffexpr/pvals_{trace_resample}_{trace}.csv"
-	shell:
-		"Rscript analysis/figs/resamples/5_trace_de.R {wildcards.trace_resample} {wildcards.trace}"
+
 
 """
 

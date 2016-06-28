@@ -14,7 +14,7 @@ stopifnot(length(args) == 2)
 i <- as.numeric(args[1]) # which resample are we performing inference on?
 j <- as.numeric(args[2]) # which posterior trace are we performing inference on?
 
-load("data/resamples/sce_trapnell_gplvm.Rdata")
+load("data/resamples/sce_trapnell_robust.Rdata")
 
 load(paste0("data/resamples/gplvm_fits/fit_", i, ".Rdata"))
 load("data/resamples/pca_resamples.Rdata")
