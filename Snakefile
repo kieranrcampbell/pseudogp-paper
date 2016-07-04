@@ -1,3 +1,12 @@
+"""
+Snakefile for reproducible analysis of
+Order under uncertainty: on the robustness of differential expression analysis using probabilistic models for pseudotime inference
+
+Kieran Campbell, University of Oxford
+July 2015
+"""
+
+
 import glob
 import numpy as np
 
@@ -50,9 +59,11 @@ rule all:
 		"figs/switchres/trapnell_5_switchres.png",
 		"figs/switchres/burns_5_switchres.png",
 		"figs/switchres/shin_5_switchres.png",
-		#"figs/fdr.png"#,
 		trapnell_de, shin_de, burns_de,
-		resample_all_cell_pvals
+		resample_all_cell_pvals,
+		de_agg, de_map,
+		trace_de,
+		"figs/diffexpr/go_enriched_categories.png"
 
 """
 		resample_traces,
@@ -247,7 +258,7 @@ rule resample_all_diffexpr:
 # Use only robustly DE genes at all-cell estimate for subsample differential expression
 rule resample_create_robust_sce:
 	input:
-		"data/resamples/all_cells_diffexpr/pvals_{posterior_trace}.csv"
+		resample_all_cell_pvals
 	output:
 		"data/resamples/sce_trapnell_robust.Rdata"
 	shell:
