@@ -183,7 +183,7 @@ plot_embedding(sct)
 pub_genes <- c("$Actb^", "Pou4f3", "Atoh1", "$Espn^", "Dkk3",
                "Myo7a", "Hes6", "Xirp2", "Hes1", "Gfi1", "Jag2", "Fscn2")
 pub_inds <- grep(paste(pub_genes, collapse="|"), featureNames(sct), ignore.case = TRUE)
-plot_in_pseudotime(reverse_pseudotime(sct[pub_inds,]), color_by = "marker")
+# plot_in_pseudotime(reverse_pseudotime(sct[pub_inds,]), color_by = "marker")
 
 #' Looking good! But is it actually a trajectory, or is it just an artefact of us forcing
 #' a k-nearest-neighbour graph onto it?
