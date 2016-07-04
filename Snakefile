@@ -181,9 +181,30 @@ rule fdr_calc:
 	input:
 		de_agg, de_map
 	output:
-		"data/diffexpr/{fdr_study}_fdr.csv"
+		"data/diffexpr/all_pvals.csv",
+		"figs/diffexpr/de_gene_nums.png"
 	shell:
-		"Rscript analysis/diffexpr/3_fdr_calculation.R {wildcards.fdr_study} {output}"
+		"Rscript analysis/diffexpr/3_fdr_calculation.R"
+
+rule go_analysis:
+	input:
+		"data/diffexpr/all_pvals.csv"
+	output:
+		"data/diffexpr/go_no_direction.csv"
+	shell:
+		"Rscript analysis/diffexpr/4_go_analysis.R"
+
+rule go_figs:
+	input:
+		"data/diffexpr/go_no_direction.csv"
+	output:
+		"figs/diffexpr/go_enriched_categories.png",
+		"figs/diffexpr/venn_Burns.png",
+		"figs/diffexpr/venn_Shin.png",
+		"figs/diffexpr/venn_Trapnell.png"
+	shell:
+		"Rscript analysis/diffexpr/5_go_figs.R"
+
 
 # Create PCA representations of 80% subsamples & for all cells
 rule resample_pca:

@@ -47,7 +47,7 @@ output_hdf5 <- "data/burns_embeddings.h5"
 output_sce <- "data/sce_burns.Rdata"
 pst_output_hdf5 <- "data/burns_pseudotime_traces.h5"
 
-pdf("figs/diagnostic/burns.pdf")
+
 x <- as.data.frame(read_delim(filename, "\t", quote = ''))
 
 #' The first two rows of `x` (as far as we can tell) contain fluorescent intensity information about
@@ -159,18 +159,18 @@ sct <- sce[, trajectory_cells]
 rv <- matrixStats::rowVars(exprs(sct))
 ntop <- 195
 feature_set <- order(rv, decreasing = TRUE)[seq_len(min(ntop, length(rv)))]
-plot_embedding(embeddr(sct, nn = 25, genes_for_embedding = feature_set))
+plot_embedding(embeddr(sct, nn = 30, genes_for_embedding = feature_set))
 
 #' There seems to be quite distinct clustering between the two datasets (laplacian eigenmap
 #' embeddings that look like this imply the graph almost has two connected components and we
 #' might as well use spectral clustering). What about using the entire gene set?
 #+ embeddr-entire, fig.width=5, fig.height=5
-plot_embedding(embeddr(sct, nn = 25))
+plot_embedding(embeddr(sct, nn = 28))
 
 #' There's now a more clearly defined trajectory. We can try and fit a principal curve to it:
 #+ fit-curve, fig.width = 5, fig.height = 5
-sct <- embeddr(sct, nn = 25)
-sct <- sct[,redDim(sct)[,2] < 0.24] # remove outliers
+sct <- embeddr(sct, nn = 28)
+# sct <- sct[,redDim(sct)[,2] < 0.24] # remove outliers
 sct <- fit_pseudotime(sct)
 Xle <- redDim(sct)[,1:2] # Laplacian eigenmaps embedding we'll use
 plot_embedding(sct)
@@ -241,9 +241,9 @@ ggplot(data.frame(X, t_gt)) +
 
 #' ### Fit the pseudotime
 #+ pseudo-fit
-fit <- fitPseudotime(X, initialise_from = "pca", 
-                     smoothing_alpha = 14, smoothing_beta = 1, seed = 123,
-                     iter = 12000, thin = 6)
+fit <- fitPseudotime(X, initialise_from = "principal_curve", 
+                     smoothing_alpha = 16, smoothing_beta = 2, seed = 123,
+                     iter = 4000, thin = 2)
 
 #' Diagnostics
 #+ plot-diagnostic
