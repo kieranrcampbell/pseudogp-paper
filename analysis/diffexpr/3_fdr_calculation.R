@@ -9,6 +9,11 @@ library(magrittr)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
+library(rhdf5)
+library(embeddr)
+library(coda)
+library(MCMCglmm)
+library(cowplot)
 
 alpha <- 0.05 # significance level
 # study <- "shin"
@@ -92,7 +97,7 @@ f$measure <- plyr::mapvalues(f$measure, from = c("n_tp", "n_fp"),
 
 
 de_gene_nums <- ggplot(f, aes(x = study, y = number, fill = measure)) + 
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", color = 'black') +
   cowplot::theme_cowplot() +
   scale_fill_brewer(name = element_blank(), palette = "Set1") +
   theme(axis.title.x = element_blank(),
@@ -109,7 +114,7 @@ de_gene_nums <- ggplot(f, aes(x = study, y = number, fill = measure)) +
 #   geom_text(aes(label = fdr_pct), vjust = -0.25)
 
 # ggsave(plot = allgene_plt, filename = "figs/diffexpr/all_genes.png", width = 5.5, height = 5)
-ggsave(plot = de_gene_nums, filename = "figs/diffexpr/de_gene_nums.png", width = 6, height = 4)
+ggsave(plot = de_gene_nums, filename = "figs/diffexpr/de_gene_nums.png", width = 5, height = 2.5)
 # ggsave(plot = fdr_plt, filename = "figs/diffexpr/fdr_barplot.png", width = 5.5, height = 5)
 
 
@@ -122,7 +127,7 @@ makeGXPlot <- function(gene, sce, pst, to_fit = 200) {
   
   inds <- sample(nrow(pst), to_fit)
   
-  gi <- grep(gene, fData(sce)$gene_short_name) 
+  gi <- match(gene, fData(sce)$gene_short_name) 
   
   models <- apply(pst[inds,], 1, function(t) {
     sce$pseudotime <- t
@@ -161,11 +166,10 @@ makeGXPlot <- function(gene, sce, pst, to_fit = 200) {
 }
 
 
-makeHeatmapPlot <- function(gene, sce, pst) {
+makeHeatmapPlot <- function(gene, sce, pst, to_sample = 20) {
   set.seed(123)
-  gi <- grep(gene, fData(sce)$gene_short_name) 
+  gi <- match(gene, fData(sce)$gene_short_name) 
   x <- exprs(sce[gi,])
-  to_sample <- 20
   psts_sampled <- pst[sample(1:nrow(pst), to_sample, replace=FALSE),]
   orders <- apply(psts_sampled, 1, order)
   gex <- apply(orders, 2, function(o) x[o])
@@ -180,4 +184,30 @@ makeHeatmapPlot <- function(gene, sce, pst) {
     xlab("Pseudotime order") + ylab(expression("Posterior\nsample")) 
 }
 
+load("data/sce_trapnell.Rdata")
+pst <- h5read("data/trapnell_pseudotime_traces.h5", "pst")
+
+genes <- c("ITGAE", "ID1")
+
+
+# GX plots ----------------------------------------------------------------
+
+plts <- lapply(genes, makeGXPlot, sce, pst)
+
+gridplt <- cowplot::plot_grid(plotlist = plts, nrow = 1, labels = genes, 
+                              label_size = 12, scale = 0.95, vjust = c(0, 0))
+
+ggsave("figs/diffexpr/example_genes.png", gridplt, width=5, height = 2.5, scale = 1.3)
+
+
+# Heatmaps ----------------------------------------------------------------
+
+genes <- c("ITGAE", "ID1")
+set.seed(13L)
+heatplots <- lapply(genes, makeHeatmapPlot, sce, pst, 20)
+heatplt <- plot_grid(plotlist = heatplots, nrow = 2, scale = 0.92,
+                     labels = c("ITGAE", "ID1"), label_size = 12, 
+                     hjust = c(-2, -4), vjust = c(0.1, 0.1)) 
+
+ggsave("figs/diffexpr/heatmaps.png", heatplt, width=5, height = 2.5, scale = 1.3)
 

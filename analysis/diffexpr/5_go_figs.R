@@ -5,6 +5,8 @@ library(cowplot)
 library(Hmisc)
 library(RColorBrewer)
 library(VennDiagram)
+library(readr)
+library(tidyr)
 
 alpha <- 0.05
 
@@ -19,19 +21,26 @@ go <- read_csv("data/diffexpr/go_no_direction.csv")
 go <- mutate(go, study = capitalize(study))
 go$etype <- as.factor(go$etype)
 
-filter(go, qval < alpha) %>%
-  ggplot(aes(x = study, fill = etype)) + geom_bar(position = "dodge") +
-  scale_fill_brewer(palette = "Set1",
-                    breaks = c("gplvm", "map", "map_only"),
-                    labels = c("Robust",
-                               "All",
-                               "Unstable")) +
-  theme(legend.position = "right",
-        legend.title = element_blank(),
-        legend.text = element_text(size = 16),
-        axis.title = element_text(size = 16),
-        axis.text = element_text(size = 14)) +
-  xlab("Study") + ylab("Number of enriched GO categories")
+go_sum <- filter(go, qval < alpha) %>%
+  group_by(study, etype) %>% 
+  summarise(count = n()) %>% 
+  complete(study, etype) %>% 
+  mutate(count, count = replace(count, is.na(count), 0))
+  
+  ggplot(go_sum, aes(x = study, fill = etype, y = count)) + 
+    geom_bar(stat = "identity", position = "dodge", color = 'black') +
+    scale_fill_brewer(palette = "Set1",
+                      breaks = c("gplvm", "map", "map_only"),
+                      labels = c("Robust",
+                                 "All",
+                                 "Unstable")) +
+    cowplot::theme_cowplot() +
+    theme(legend.position = "right",
+          legend.title = element_blank(),
+          legend.text = element_text(size = 16),
+          axis.title = element_text(size = 16),
+          axis.text = element_text(size = 14)) +
+    xlab("Study") + ylab("Number of enriched GO categories") 
 
 ggsave("figs/diffexpr/go_enriched_categories.png", width = 6, height = 4)
 

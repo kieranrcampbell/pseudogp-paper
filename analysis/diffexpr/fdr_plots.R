@@ -11,6 +11,7 @@ library(coda)
 library(cowplot)
 library(gplots)
 library(grid)
+library(reshape2)
 
 
 source("analysis/diffexpr/common.R")
@@ -128,10 +129,6 @@ makeGXPlot <- function(gene, sce, pst, to_fit = 200) {
 
 set.seed(123)
 genes <- c("ITGAE", "^ID1$")
-plts <- lapply(genes, makeGXPlot, sce, pst)
-
-gridplt <- cowplot::plot_grid(plotlist = plts, nrow = 1, labels = c("ITGAE", "ID1"), 
-                              hjust = c(-2, -4), vjust = c(0, 0), label_size = 12)
 #ggsave("goodbadplots.png", gridplt, width = 4, height = 2, scale = 1.3)
 
 
@@ -156,20 +153,5 @@ makeHeatmapPlot <- function(gene, sce, pst) {
     xlab("Pseudotime order") + ylab(expression("Posterior\nsample")) 
 }
 
-heatplots <- lapply(genes, makeHeatmapPlot, sce, pst)
-heatplt <- plot_grid(plotlist = heatplots, nrow = 2, 
-                     labels = c("ITGAE", "ID1"), label_size = 12, hjust = c(-2, -4)) 
-
-plots <- list(fe_plt, afdr_plt, gridplt, heatplt)
-# add margins
-plots <- lapply(plots, function(plt) plt + theme(plot.margin = unit(rep(1, 4), "cm")))
-
-# lower_grid <- plot_grid(afdr_plt, gridplt, nrow = 1, labels = c("B", "C"), label_size = 16)
-
-plots <- plots[c(3,4,1,2)]
-all_plt <- cowplot::plot_grid(plotlist = plots, nrow = 2, 
-                              labels = c("A", "B", "C", "D"), label_size = 16, rel_heights = c(2.5,3))
-
-ggsave(fdr_plot_filename, all_plt, width = 8, height = 6, scale = 1.5)
 
 
