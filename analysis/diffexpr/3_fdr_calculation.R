@@ -92,7 +92,7 @@ f <- fd_df %>%
   arrange(desc(measure))
 
 f$measure <- plyr::mapvalues(f$measure, from = c("n_tp", "n_fp"),
-                             to = c("True positive", "False positive"))
+                             to = c("Robust", "Unstable"))
 # f$measure <- factor(f$measure, levels = c("True postive", "False positive"))
 
 

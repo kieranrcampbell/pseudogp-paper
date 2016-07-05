@@ -276,33 +276,4 @@ rule trace_diffexpr:
 		"Rscript analysis/figs/resamples/5_trace_de.R {wildcards.trace_resample} {wildcards.trace}"
 
 
-"""
-rule resample_choose_genes:
-	input:
-		"data/sce_trapnell.Rdata"
-	output:
-		"data/resamples/sce_trapnell_resamples.Rdata"
-	shell:
-		"Rscript analysis/figs/resamples/2_choose_genes.R"
-
-rule resample_diffexpr:
-	input:
-		"data/resamples/sce_trapnell_resamples.Rdata",
-		"data/resamples/gplvm_fits/fit_{de_resample}.Rdata"
-	output:
-		"data/resamples/diffexpr/pvals_{de_resample}.csv"
-	shell:
-		"Rscript analysis/figs/resamples/3_differential_expression.R {wildcards.de_resample}"
-
-rule resample_gplvm_gene_select:
-	input:
-		resample_de, "data/resamples/sce_trapnell_resamples.Rdata"
-	output:
-		"data/resamples/sce_trapnell_gplvm.Rdata"
-	shell:
-		"Rscript analysis/figs/resamples/4_genes_for_gplvm.R"
-
-
-
-"""
 

@@ -6,7 +6,9 @@ It is  organised into
 * `analysis`: Rmarkdown notebooks for all analysis
 * `data`: All MCMC traces, embeddings and gene expression `SCESets` 
 
+In theory navigating to the root directory and running `snakemake` will build all figures for the manuscript (deposited in the `figs` directory). However, this should really be run using a compute cluster (see `run_on_cluster` for an example) as there are many heavy computations.
+
 ## Authors
 
-Kieran Campbell & Christopher Yau, December 2015
+Kieran Campbell & Christopher Yau, July 2016
 
