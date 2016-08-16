@@ -15,6 +15,10 @@ set.seed(123L)
 load("data/sce_trapnell.Rdata")
 sce@featureControlInfo <- AnnotatedDataFrame()
 
+n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
+genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
+sce <- sce[genes_to_use,]
+
 sce <- plotPCA(sce, return_SCESet = TRUE)
 
 fit <- fitPseudotime(redDim(sce)[,1:2], "pca", iter = 5000, thin = 5,

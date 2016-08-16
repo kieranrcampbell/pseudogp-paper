@@ -17,6 +17,10 @@ sce@featureControlInfo <- AnnotatedDataFrame()
 
 ncells <- ncol(sce)
 
+n_cells_exprs <- rowSums(exprs(sce) > sce@lowerDetectionLimit)
+genes_to_use <- n_cells_exprs > (0.1 * ncol(sce)) # select genes expressed in at least 10% of cells
+sce <- sce[genes_to_use,]
+
 n_resamples <- 500
 
 PCA_reps <- lapply(seq_len(n_resamples), function(i) {
