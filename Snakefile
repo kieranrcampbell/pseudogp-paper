@@ -14,6 +14,7 @@ np.random.seed(123)
 
 DE_RUNS = [str(i) for i in range(1, 501)]
 
+BOOTSTRAPS = [i for i in range(1, 501)] # we do 500 bootstraps, but R indexes at 1
 
 RESAMPLES = [str(i) for i in range(1, 101)]
 
@@ -48,6 +49,9 @@ de_agg = expand("data/diffexpr/agg_pvals/{study}.csv", study = studies)
 de_map = expand("data/diffexpr/map/{map_study}.csv", map_study = studies)
 fdr_csv = expand("data/diffexpr/{fdr_study}_fdr.csv", fdr_study = studies)
 
+bootstrap_de = expand("data/bootstrap/bootstrapped_de/de_{bs}.csv", bs = BOOTSTRAPS)
+gplvm_bootstrap_de = expand("data/bootstrap/gplvm_de/de_{bs}.csv", bs = BOOTSTRAPS)
+
 rule all:
 	input:
 		pst_traces,
@@ -63,7 +67,9 @@ rule all:
 		resample_all_cell_pvals,
 		de_agg, de_map,
 		trace_de,
-		"figs/diffexpr/go_enriched_categories.png"
+		"figs/diffexpr/go_enriched_categories.png",
+		bootstrap_de,
+		gplvm_bootstrap_de
 
 """
 		resample_traces,
@@ -275,5 +281,42 @@ rule trace_diffexpr:
 	shell:
 		"Rscript analysis/figs/resamples/5_trace_de.R {wildcards.trace_resample} {wildcards.trace}"
 
+## Bootstrapping -------
+
+rule create_bootstraps:
+	input:
+		"data/sce_trapnell.Rdata"
+	output:
+		"data/bootstrap/bootstrap_pseudotimes.csv",
+		"data/bootstrap/which_cells.csv"
+	shell:
+		"Rscript analysis/figs/boostrap/0_create_bootstraps.R"
+
+rule create_gplvm_pst:
+	input:
+		"data/sce_trapnell.Rdata"
+	output:
+		"data/bootstrap/gplvm_pseudotimes.csv"
+	shell:
+		"Rscript analysis/figs/boostrap/1_fit_gplvm.R"
+
+rule bootstrap_de:
+	input:
+		"data/sce_trapnell.Rdata",
+		"data/bootstrap/which_cells.csv",
+		"data/bootstrap/bootstrap_pseudotimes.csv"
+	output:
+		"data/bootstrap/bootstrapped_de/de_{bs}.csv"
+	shell:
+		"Rscript analysis/figs/boostrap/2_bootstrap_de.R {bs}"
+
+rule bootstrap_gplvm_de:
+	input:
+		"data/sce_trapnell.Rdata",
+		"data/bootstrap/gplvm_pseudotimes.csv"
+	output:
+		"data/bootstrap/gplvm_de/de_{bs}.csv"
+	shell:
+		"Rscript analysis/figs/boostrap/3_gplmv_de.R {bs}"
 
 
