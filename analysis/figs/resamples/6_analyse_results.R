@@ -34,15 +34,15 @@ p2 <- psig_df %>%
 
 
 
-plt_all_traces <-   
-  ggplot(psig_df, aes(x = prop_sig)) + geom_histogram(aes(y = ..count../sum(..count..))) +
+plt_all_traces <- ggplot(psig_df, aes(x = 100 * prop_sig)) + geom_histogram(aes(y = ..count../sum(..count..))) +
   xlab("% DE tests") +
   ylab("Frequency")
 
 print(mean(psig_df$robust_sig))
 
 
-plt_gene <-   ggplot(p2, aes(x = prop_pca_rsig)) + geom_histogram(aes(y = cumsum(..count../sum(..count..)))) +
+plt_gene <-   ggplot(p2, aes(x = 100 * prop_pca_rsig)) + 
+  geom_histogram(aes(y = cumsum(..count../sum(..count..)))) +
   xlab("% PCA subsamples") +
   ylab("Cumulative frequency")
 
