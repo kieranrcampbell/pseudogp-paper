@@ -3,10 +3,15 @@ data/*.h5
 data/*.Rdata
 *.bak
 *.html
+*.log
+*.xlsx
 *.Rmd
 *.pdf
 *.png
 *.txt
+*.csv
+*.gz
+*.Rdata
 \._*
 *~
 .DS_Store
